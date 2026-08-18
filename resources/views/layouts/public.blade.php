@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@yield('title', config('app.name').' — Creator collaboration marketplace')</title>
+    <meta name="description" content="@yield('meta_description', 'Vidlix is a professional marketplace for creators, editors, brands, and managers — from discovery to settlement.')">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+</head>
+<body>
+    <a class="skip" href="#main">{{ __('Skip to content') }}</a>
+    <header class="site-header">
+        <div class="wrap nav" id="site-nav">
+            <a class="brand" href="{{ route('home') }}">{{ config('app.name') }}</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" data-nav-toggle>{{ __('Menu') }}</button>
+            <nav class="nav-links" id="primary-nav" aria-label="{{ __('Primary') }}">
+                <a href="{{ route('creators.index') }}">{{ __('Creators') }}</a>
+                <a href="{{ route('editors.index') }}">{{ __('Editors') }}</a>
+                <a href="{{ route('brands.index') }}">{{ __('Brands') }}</a>
+                <a href="{{ route('campaigns.index') }}">{{ __('Campaigns') }}</a>
+                <a href="{{ route('pages.show', 'how-it-works') }}">{{ __('How it works') }}</a>
+                <a href="{{ route('pricing') }}">{{ __('Pricing') }}</a>
+                <a href="{{ route('blog.index') }}">{{ __('Journal') }}</a>
+                @auth
+                    <a href="{{ route('dashboard') }}">{{ __('Dashboard') }}</a>
+                @else
+                    <a href="{{ route('login') }}">{{ __('Login') }}</a>
+                    <a class="btn" href="{{ route('register') }}">{{ __('Join') }}</a>
+                @endauth
+            </nav>
+        </div>
+    </header>
+    <main id="main">
+        @yield('content')
+    </main>
+    @include('partials.public-footer')
+    <script>
+        const nav = document.getElementById('site-nav');
+        const toggle = document.querySelector('[data-nav-toggle]');
+        if (nav && toggle) {
+            toggle.addEventListener('click', () => {
+                const open = nav.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
+    </script>
+</body>
+</html>
