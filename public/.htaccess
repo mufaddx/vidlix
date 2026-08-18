@@ -1,3 +1,14 @@
+# Hostinger shared hosting pins PHP per account, and its panel does not always
+# expose a PHP version selector for a site. The vendor tree requires PHP 8.4.1+
+# (Symfony 8.1), so an 8.3 handler fails before Laravel can boot and logs
+# nothing. This selects the 8.4 interpreter explicitly.
+#
+# It is wrapped in <IfModule mime_module> so a host without alt-php simply
+# ignores it rather than erroring. Harmless anywhere else.
+<IfModule mime_module>
+    AddHandler application/x-httpd-alt-php84___lsphp .php
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

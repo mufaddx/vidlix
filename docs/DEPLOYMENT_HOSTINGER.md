@@ -51,6 +51,14 @@ php artisan view:cache
 php artisan storage:link
 ```
 
+On Hostinger, `symlink` is in `disable_functions`, so `storage:link` fails.
+Create the link from the shell instead — the shell is not subject to PHP's
+`disable_functions`:
+
+```
+ln -s ~/vidlix/storage/app/public ~/vidlix/public/storage
+```
+
 ## 3. Admin account
 
 The seeder reads `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_MOBILE`. Set a real
@@ -108,6 +116,33 @@ interactive, so do not move settlement or chat onto the queue.
 Do **not** set `QUEUE_CONNECTION=sync` to avoid the problem. That runs the
 provider call inside the web request, so a slow or failing provider becomes a
 slow or failing page for the user.
+
+### PHP version on shared hosting
+
+The vendor tree needs PHP 8.4.1+. Hostinger's panel does not always expose a PHP
+version selector per site, and `crontab`/CloudLinux selector CLIs are not
+available to the account either. When the selector is missing, `public/.htaccess`
+already pins the interpreter:
+
+```
+<IfModule mime_module>
+    AddHandler application/x-httpd-alt-php84___lsphp .php
+</IfModule>
+```
+
+Symptom when this is wrong: a bare 500 with **nothing in `storage/logs`**. That
+is the giveaway — the failure is Composer's platform check firing before Laravel
+boots, so Laravel never gets far enough to log anything. Confirm the version the
+web actually runs before hunting anywhere else:
+
+```
+php -r 'echo PHP_VERSION;'          # CLI, may differ from web
+curl -s https://your-domain/ -o /dev/null -w '%{http_code}
+'
+```
+
+CLI and web can run different versions. Artisan working while the site 500s is
+consistent with exactly this.
 
 ### Document root on shared hosting
 
