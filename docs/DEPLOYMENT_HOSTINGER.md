@@ -62,16 +62,66 @@ never exist on a production host.
 
 ## 4. Queue and scheduler
 
-Outbound email, Instagram syncs and push all run on the queue, so a worker is
-required — without one, replies sit in `queued` forever.
+Outbound email, Instagram syncs and push all run on the queue, so something must
+drain it. Without a worker, replies sit in `queued` forever — the message is
+stored and the UI says so honestly, but it never actually leaves.
+
+### VPS (preferred)
+
+A long-running worker under Supervisor, plus one cron line for the scheduler:
 
 ```
-# Supervisor (or the Hostinger equivalent)
-php /home/USER/vidlix/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+# /etc/supervisor/conf.d/vidlix-worker.conf
+[program:vidlix-worker]
+command=php /home/USER/vidlix/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+user=USER
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/home/USER/vidlix/storage/logs/worker.log
+stopwaitsecs=3600
 
 # Cron
 * * * * * cd /home/USER/vidlix && php artisan schedule:run >> /dev/null 2>&1
 ```
+
+### Shared hosting (no Supervisor)
+
+Hostinger shared plans have no process manager, so run a short-lived worker from
+cron instead. It drains whatever is waiting and exits before the next minute:
+
+```
+* * * * * cd /home/USER/vidlix && php artisan queue:work --stop-when-empty --max-time=55 --tries=3 >> /dev/null 2>&1
+* * * * * cd /home/USER/vidlix && php artisan schedule:run >> /dev/null 2>&1
+```
+
+`--max-time=55` keeps a slow job from overlapping the next tick, and
+`--stop-when-empty` means an idle site costs nothing. The tradeoff is latency: a
+reply can wait up to a minute before it is handed to the provider. That is
+acceptable for email and Instagram syncs; it is not acceptable for anything
+interactive, so do not move settlement or chat onto the queue.
+
+Do **not** set `QUEUE_CONNECTION=sync` to avoid the problem. That runs the
+provider call inside the web request, so a slow or failing provider becomes a
+slow or failing page for the user.
+
+### Document root on shared hosting
+
+Laravel must be served from `public/`, but Hostinger shared plans serve
+`public_html`. In order of preference:
+
+1. **Change the document root in hPanel** to `.../vidlix/public`. Available on
+   Business and higher — use this if you have it.
+2. **Put the app beside `public_html`** (e.g. `/home/USER/vidlix`) and replace
+   `public_html` with a symlink to `/home/USER/vidlix/public`.
+3. **Last resort:** copy the contents of `public/` into `public_html` and edit
+   its `index.php` paths to point one level up. This works, but it splits the
+   app across two directories and every deploy has to remember it — avoid unless
+   the first two are impossible.
+
+Never solve this by moving the app itself into `public_html`. That puts `.env`,
+`storage/` and `vendor/` on the public web.
 
 ## 5. Webhook URLs
 
