@@ -1,6 +1,6 @@
 # Run locally
 
-1. PHP 8.3+ is required (Composer optional: `php C:\Users\themu\composer.phar`).
+1. PHP 8.4+ is required (Composer optional: `php C:\Users\themu\composer.phar`).
 2. Copy `.env.example` to `.env` if needed, then `php artisan key:generate`.
 3. Local default is SQLite (`database/database.sqlite`). For MySQL, set `DB_CONNECTION=mysql` and credentials.
 4. `php artisan migrate:fresh --seed`

@@ -32,5 +32,26 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!--
+            Every provider is forced off for the suite, so a developer with real
+            credentials in .env cannot have tests reach a live provider or
+            change what a test asserts. Tests that need a configured provider
+            opt in explicitly with config() plus Http::fake().
+        -->
+        <env name="PAYMENT_PROVIDER" value="unconfigured"/>
+        <env name="PAYOUT_PROVIDER" value="unconfigured"/>
+        <env name="EMAIL_PROVIDER" value="unconfigured"/>
+        <env name="INSTAGRAM_PROVIDER" value="unconfigured"/>
+        <env name="PUSH_PROVIDER" value="unconfigured"/>
+        <env name="PAYMENT_KEY_ID" value=""/>
+        <env name="PAYMENT_KEY_SECRET" value=""/>
+        <env name="PAYMENT_WEBHOOK_SECRET" value=""/>
+        <env name="PAYOUT_WEBHOOK_SECRET" value=""/>
+        <env name="EMAIL_API_KEY" value=""/>
+        <env name="EMAIL_WEBHOOK_SECRET" value=""/>
+        <env name="META_APP_ID" value=""/>
+        <env name="META_APP_SECRET" value=""/>
+        <env name="META_WEBHOOK_VERIFY_TOKEN" value=""/>
     </php>
 </phpunit>

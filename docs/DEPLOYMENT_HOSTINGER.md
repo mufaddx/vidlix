@@ -1,10 +1,13 @@
 # Hostinger deployment
 
-Target: PHP 8.3+, MySQL, SSL, document root `public/`.
+Target: PHP 8.4+, MySQL, SSL, document root `public/`.
 
 ## 1. Server and code
 
-1. Create the hosting plan or VPS with PHP 8.3+ and MySQL.
+1. Create the hosting plan or VPS with PHP 8.4+ and MySQL. The lock file
+   resolves Symfony 8.1, which requires PHP >= 8.4.1 — 8.3 will fail at
+   `composer install`. On Hostinger this is hPanel -> Advanced -> PHP
+   Configuration, and it must be changed for the web side too, not just CLI.
 2. Point the domain and set the document root to **`public/`**. Nothing above
    `public/` may be web-reachable.
 3. Upload the app, then `composer install --no-dev --optimize-autoloader`.

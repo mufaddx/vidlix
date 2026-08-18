@@ -79,7 +79,9 @@ return new class extends Migration
             $table->timestamp('accepted_at')->nullable();
             $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
-            $table->unique(['creator_user_id', 'manager_user_id']);
+            // Named explicitly: the implicit name is 68 characters, over MySQL's
+            // 64-character identifier limit.
+            $table->unique(['creator_user_id', 'manager_user_id'], 'creator_manager_pair_unique');
         });
 
         Schema::create('campaigns', function (Blueprint $table) {
