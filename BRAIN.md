@@ -93,7 +93,7 @@ half-working integration.
 | Payouts | `razorpayx` | not set up | `POST /webhooks/payout` |
 | Email | **`resend`** (chosen) /`sendgrid`/`smtp`/`ses`/`postmark` | key issued | `/webhooks/email/inbound`, `/webhooks/email/events` |
 | Instagram | `meta` | none | `GET+POST /webhooks/meta` |
-| Storage | **Cloudflare R2** (chosen) | pending credentials | — |
+| Storage | **Cloudflare R2** | live, verified | — |
 | Push | `fcm` | none | — |
 
 Verify storage with `php artisan vidlix:storage-check` — it writes, reads,
@@ -110,9 +110,7 @@ All default to `unconfigured`. Detail: `docs/INTEGRATIONS.md`.
 Hostinger with MySQL + SSL.
 
 **Outstanding (operational, not code)**:
-- Cron jobs not yet registered in hPanel → **queue never drains**, email sits in
-  `queued` forever. Two entries needed, every minute (see §9).
-- Razorpay/Meta/email/storage accounts + KYC + Meta App Review.
+- Razorpay webhook secret, RazorpayX activation, Meta App Review.
 - Legal CMS pages (`/p/terms`, `/p/privacy`, …) still contain placeholder text.
 - Creator payout bank-account onboarding UI does not exist; `payout_accounts`
   is admin/manual.
