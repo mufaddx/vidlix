@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminHelpDeskController;
 use App\Http\Controllers\Admin\AdminManagerController;
 use App\Http\Controllers\Admin\AdminMemberController;
 use App\Http\Controllers\Admin\AdminOpsController;
+use App\Http\Controllers\Admin\AdminPlatformController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DiscoveryController;
 use App\Http\Controllers\App\InboxController;
@@ -36,7 +37,7 @@ Route::get('/editors/{username}', [EditorPublicController::class, 'show'])->name
 // matches /creators. Both resolve so a printed or pasted link never dead-ends.
 Route::get('/editor/{username}', fn (string $username) => redirect()->route('editors.public', $username));
 Route::post('/editors/{username}/enquire', [EditorPublicController::class, 'enquire'])
-    ->middleware('throttle:public-form')
+    ->middleware(['throttle:public-form', 'feature:public_enquiries'])
     ->name('editors.enquire');
 Route::get('/brands', [HomeController::class, 'brands'])->name('brands.index');
 Route::get('/brands/{slug}', [HomeController::class, 'brandShow'])->name('brands.public');
@@ -46,7 +47,7 @@ Route::get('/blog/{slug}', [HomeController::class, 'post'])->name('blog.show');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/p/{slug}', [HomeController::class, 'page'])->name('pages.show');
 Route::get('/u/{username}', [CreatorPublicController::class, 'show'])->name('creators.public');
-Route::post('/u/{username}/inquire', [CreatorPublicController::class, 'inquire'])->middleware('throttle:public-form')->name('creators.inquire');
+Route::post('/u/{username}/inquire', [CreatorPublicController::class, 'inquire'])->middleware(['throttle:public-form', 'feature:public_enquiries'])->name('creators.inquire');
 
 Route::middleware('guest')->group(function () {
     /*
@@ -54,7 +55,7 @@ Route::middleware('guest')->group(function () {
      | The middle step is a real emailed code, so these endpoints are throttled
      | as tightly as the login form.
      */
-    Route::get('/register', [SignupFlowController::class, 'create'])->name('register');
+    Route::get('/register', [SignupFlowController::class, 'create'])->name('register')->middleware('feature:public_signup');
     Route::post('/register/start', [SignupFlowController::class, 'start'])->middleware('throttle:register')->name('register.start');
     Route::post('/register/verify', [SignupFlowController::class, 'verify'])->middleware('throttle:otp')->name('register.verify');
     Route::post('/register/resend', [SignupFlowController::class, 'resend'])->middleware('throttle:otp')->name('register.resend');
@@ -136,7 +137,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/brand/documents', [WorkspaceController::class, 'uploadBrandDocument'])->name('app.brand.documents.store');
         Route::delete('/brand/documents/{document}', [WorkspaceController::class, 'deleteBrandDocument'])->name('app.brand.documents.destroy');
         Route::get('/app/campaigns', [WorkspaceController::class, 'campaigns'])->name('app.campaigns');
-        Route::post('/app/campaigns', [WorkspaceController::class, 'storeCampaign'])->name('app.campaigns.store');
+        Route::post('/app/campaigns', [WorkspaceController::class, 'storeCampaign'])->name('app.campaigns.store')->middleware('feature:campaign_publishing');
         Route::post('/app/campaigns/{campaign}/submit', [WorkspaceController::class, 'submitCampaign'])->name('app.campaigns.submit');
         Route::post('/app/campaigns/{campaign}/apply', [WorkspaceController::class, 'applyCampaign'])->name('app.campaigns.apply');
         Route::get('/applications', [WorkspaceController::class, 'applications'])->name('app.applications');
@@ -153,7 +154,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/chat/{uuid}', [WorkspaceController::class, 'showChat'])->name('app.chat.show');
         Route::post('/chat/{uuid}', [WorkspaceController::class, 'chatReply'])->name('app.chat.reply');
         Route::get('/earnings', [WorkspaceController::class, 'earnings'])->name('app.earnings');
-        Route::post('/withdrawals', [WorkspaceController::class, 'withdraw'])->name('app.withdraw');
+        Route::post('/withdrawals', [WorkspaceController::class, 'withdraw'])->name('app.withdraw')->middleware('feature:withdrawals');
         Route::get('/management', [WorkspaceController::class, 'managers'])->name('app.managers');
         Route::post('/management/invite', [WorkspaceController::class, 'inviteManager'])->name('app.managers.invite');
         Route::post('/management/accept/{token}', [WorkspaceController::class, 'acceptInvite'])->name('app.managers.accept');
@@ -162,7 +163,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/automations', [WorkspaceController::class, 'automations'])->name('app.automations');
         Route::post('/automations', [WorkspaceController::class, 'storeAutomation'])->name('app.automations.store');
         Route::get('/instagram', [WorkspaceController::class, 'instagram'])->name('app.instagram');
-        Route::post('/instagram/connect', [InstagramController::class, 'connect'])->name('app.instagram.connect');
+        Route::post('/instagram/connect', [InstagramController::class, 'connect'])->name('app.instagram.connect')->middleware('feature:instagram_sync');
         Route::post('/instagram/sync', [InstagramController::class, 'sync'])->name('app.instagram.sync');
         Route::get('/project-files/{file}', [ProjectFileController::class, 'download'])->name('app.project-files.download');
         Route::get('/disputes', [WorkspaceController::class, 'disputes'])->name('app.disputes')->middleware('can:disputes.resolve');
@@ -235,6 +236,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/managers/assign', [AdminManagerController::class, 'assign'])->name('managers.assign')->middleware('can:managers.assign');
 
         // Staff accounts. Granting abilities is itself gated.
+        Route::get('/health', [AdminPlatformController::class, 'health'])->name('health')->middleware('can:platform.manage');
+        Route::get('/platform', [AdminPlatformController::class, 'index'])->name('platform')->middleware('can:platform.manage');
+        Route::post('/platform/flag', [AdminPlatformController::class, 'saveFlag'])->name('platform.flag')->middleware('can:platform.manage');
+        Route::post('/platform/maintenance', [AdminPlatformController::class, 'saveMaintenance'])->name('platform.maintenance')->middleware('can:platform.manage');
         Route::get('/employees', [AdminEmployeeController::class, 'index'])->name('employees')->middleware('can:employees.manage');
         Route::post('/employees', [AdminEmployeeController::class, 'store'])->name('employees.store')->middleware('can:employees.manage');
         Route::post('/employees/{employee}/abilities', [AdminEmployeeController::class, 'updateAbilities'])->name('employees.abilities')->middleware('can:employees.manage');

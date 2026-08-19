@@ -35,6 +35,12 @@ final class Ability
 
     public const MANAGERS_VIEW = 'managers.view';
 
+    /**
+     * Turning features on and closing the site. Kept apart from cms.manage:
+     * someone trusted to fix a typo is not thereby trusted to shut the site.
+     */
+    public const PLATFORM_MANAGE = 'platform.manage';
+
     /** Granting abilities is itself an ability, and only a super admin has it. */
     public const EMPLOYEES_MANAGE = 'employees.manage';
 
@@ -70,6 +76,9 @@ final class Ability
                 self::USERS_MANAGE => 'Suspend or restore an account, and take a public page down',
                 self::MANAGERS_VIEW => 'See who manages whom',
                 self::MANAGERS_ASSIGN => 'Assign a manager to a member on the company\'s behalf',
+            ],
+            'Platform' => [
+                self::PLATFORM_MANAGE => 'Turn features on or off, and close the site for maintenance',
             ],
             'Staff' => [
                 self::EMPLOYEES_MANAGE => 'Add employees and grant abilities (super admin only)',
