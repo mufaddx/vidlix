@@ -73,6 +73,9 @@ return [
         // Reply-To routing: reply+<routing_token>@<inbound_domain>
         'inbound_domain' => env('EMAIL_INBOUND_DOMAIN'),
         'reply_prefix' => env('EMAIL_REPLY_PREFIX', 'reply'),
+        // Transactional mail only (sign-in codes, confirmations). Never used for
+        // a person-to-person thread, which must have a real Reply-To.
+        'system_prefix' => env('EMAIL_SYSTEM_PREFIX', 'noreply'),
         'webhook_username' => env('EMAIL_WEBHOOK_USERNAME'),
         'webhook_password' => env('EMAIL_WEBHOOK_PASSWORD'),
         'verification_key' => env('EMAIL_WEBHOOK_PUBLIC_KEY'),

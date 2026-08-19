@@ -26,4 +26,13 @@ class UnconfiguredEmailProvider implements EmailProviderInterface
             'detail' => 'Outbound email is queued until EMAIL_PROVIDER credentials are configured. The message is stored.',
         ];
     }
+
+    public function sendSystemMail(string $toEmail, string $subject, string $body, OutboundIdentity $identity): array
+    {
+        return [
+            'status' => 'provider_not_configured',
+            'provider_message_id' => null,
+            'detail' => 'No email provider is configured, so nothing was sent.',
+        ];
+    }
 }

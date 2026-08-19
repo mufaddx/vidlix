@@ -92,4 +92,37 @@ class SendGridEmailProvider implements EmailProviderInterface
             'detail' => 'SendGrid accepted the message for delivery. Delivery is confirmed by the event webhook only.',
         ];
     }
+
+    public function sendSystemMail(string $toEmail, string $subject, string $body, OutboundIdentity $identity): array
+    {
+        if (! $this->isConfigured()) {
+            return [
+                'status' => 'provider_not_configured',
+                'provider_message_id' => null,
+                'detail' => 'EMAIL_API_KEY / MAIL_FROM_ADDRESS are missing. Nothing was sent.',
+            ];
+        }
+
+        try {
+            $response = Http::withToken((string) config('vidlix.email.api_key'))
+                ->baseUrl(rtrim((string) config('vidlix.email.api_base') ?: 'https://api.sendgrid.com/v3', '/'))
+                ->acceptJson()->asJson()
+                ->timeout((int) config('vidlix.email.timeout', 20))
+                ->post('/mail/send', [
+                    'personalizations' => [['to' => [['email' => $toEmail]]]],
+                    'from' => ['email' => $identity->fromAddress, 'name' => $identity->fromName],
+                    'reply_to' => ['email' => $identity->replyTo],
+                    'subject' => $subject,
+                    'content' => [['type' => 'text/plain', 'value' => $body]],
+                ]);
+        } catch (Throwable $e) {
+            Log::warning('sendgrid.system.transport_failure', ['message' => $e->getMessage()]);
+
+            return ['status' => 'failed', 'provider_message_id' => null, 'detail' => 'SendGrid could not be reached.'];
+        }
+
+        return $response->successful()
+            ? ['status' => 'accepted', 'provider_message_id' => $response->header('X-Message-Id') ?: null, 'detail' => 'SendGrid accepted the message.']
+            : ['status' => 'failed', 'provider_message_id' => null, 'detail' => 'SendGrid returned '.$response->status().'.'];
+    }
 }

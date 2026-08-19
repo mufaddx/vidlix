@@ -80,4 +80,30 @@ class SmtpEmailProvider implements EmailProviderInterface
             'detail' => 'The relay accepted the message. Delivery is confirmed by the provider event webhook only.',
         ];
     }
+
+    public function sendSystemMail(string $toEmail, string $subject, string $body, OutboundIdentity $identity): array
+    {
+        if (! $this->isConfigured()) {
+            return [
+                'status' => 'provider_not_configured',
+                'provider_message_id' => null,
+                'detail' => 'MAIL_* is still on the log/array mailer. Nothing was sent.',
+            ];
+        }
+
+        try {
+            Mail::raw($body, function (MailMessage $mail) use ($toEmail, $subject, $identity) {
+                $mail->to($toEmail)
+                    ->subject($subject)
+                    ->replyTo($identity->replyTo)
+                    ->from($identity->fromAddress, $identity->fromName);
+            });
+        } catch (Throwable $e) {
+            Log::warning('smtp.system.failure', ['message' => $e->getMessage()]);
+
+            return ['status' => 'failed', 'provider_message_id' => null, 'detail' => 'The SMTP relay rejected the message.'];
+        }
+
+        return ['status' => 'accepted', 'provider_message_id' => null, 'detail' => 'The relay accepted the message.'];
+    }
 }

@@ -94,6 +94,64 @@ class ResendEmailProvider implements EmailProviderInterface
         ];
     }
 
+    public function sendSystemMail(string $toEmail, string $subject, string $body, OutboundIdentity $identity): array
+    {
+        if (! $this->isConfigured()) {
+            return [
+                'status' => 'provider_not_configured',
+                'provider_message_id' => null,
+                'detail' => 'EMAIL_API_KEY / MAIL_FROM_ADDRESS are missing. Nothing was sent.',
+            ];
+        }
+
+        return $this->post([
+            'from' => $identity->fromName !== ''
+                ? $identity->fromName.' <'.$identity->fromAddress.'>'
+                : $identity->fromAddress,
+            'to' => [$toEmail],
+            'subject' => $subject,
+            'text' => $body,
+            'reply_to' => [$identity->replyTo],
+        ]);
+    }
+
+    /**
+     * @return array{status: string, provider_message_id: ?string, detail: string}
+     */
+    private function post(array $payload): array
+    {
+        try {
+            $response = Http::withToken((string) config('vidlix.email.api_key'))
+                ->baseUrl(rtrim((string) config('vidlix.email.api_base') ?: 'https://api.resend.com', '/'))
+                ->acceptJson()
+                ->asJson()
+                ->timeout((int) config('vidlix.email.timeout', 20))
+                ->post('/emails', $payload);
+        } catch (Throwable $e) {
+            Log::warning('resend.send.transport_failure', ['message' => $e->getMessage()]);
+
+            return [
+                'status' => 'failed',
+                'provider_message_id' => null,
+                'detail' => 'Resend could not be reached. Nothing was sent.',
+            ];
+        }
+
+        if (! $response->successful()) {
+            return [
+                'status' => 'failed',
+                'provider_message_id' => null,
+                'detail' => 'Resend returned '.$response->status().': '.$this->errorText($response->json()),
+            ];
+        }
+
+        return [
+            'status' => 'accepted',
+            'provider_message_id' => $response->json('id'),
+            'detail' => 'Resend accepted the message for delivery. Delivery is confirmed by the event webhook only.',
+        ];
+    }
+
     private function errorText(mixed $json): string
     {
         if (is_array($json) && isset($json['message'])) {
