@@ -133,6 +133,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/brand', [WorkspaceController::class, 'brandProfile'])->name('app.brand');
         Route::post('/brand', [WorkspaceController::class, 'saveBrand'])->name('app.brand.save');
+        Route::post('/brand/documents', [WorkspaceController::class, 'uploadBrandDocument'])->name('app.brand.documents.store');
+        Route::delete('/brand/documents/{document}', [WorkspaceController::class, 'deleteBrandDocument'])->name('app.brand.documents.destroy');
         Route::get('/app/campaigns', [WorkspaceController::class, 'campaigns'])->name('app.campaigns');
         Route::post('/app/campaigns', [WorkspaceController::class, 'storeCampaign'])->name('app.campaigns.store');
         Route::post('/app/campaigns/{campaign}/submit', [WorkspaceController::class, 'submitCampaign'])->name('app.campaigns.submit');

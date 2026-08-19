@@ -6,6 +6,8 @@ use App\Contracts\InstagramProviderInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Automation;
 use App\Models\BlogPost;
+use App\Models\BrandDocument;
+use App\Models\BrandProfile;
 use App\Models\Campaign;
 use App\Models\CampaignApplication;
 use App\Models\Conversation;
@@ -23,11 +25,13 @@ use App\Models\Role;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\Audit\AuditLogger;
 use App\Services\Billing\InvoicePdf;
 use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
 use App\Services\Managers\ManagerDirectory;
 use App\Services\Marketplace\MarketplaceEngine;
+use App\Services\Media\MediaStorage;
 use App\Services\Support\HelpDesk;
 use App\Services\Workspace\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +39,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class WorkspaceController extends Controller
@@ -75,11 +80,34 @@ class WorkspaceController extends Controller
         return view('app.editor-home', ['profile' => request()->user()->fresh()->editorProfile]);
     }
 
-    public function brandProfile(): View
+    public function brandProfile(Request $request): View
     {
-        $this->ensureRole(request()->user(), 'brand');
+        $profile = $this->brandProfileFor($request);
 
-        return view('app.partials.brand-form', ['profile' => request()->user()->fresh()->brandProfile]);
+        return view('app.partials.brand-form', [
+            'profile' => $profile,
+            'documents' => $profile->documents()->latest()->get(),
+            'kinds' => BrandDocument::KINDS,
+            'missing' => $profile->missingForVerification(),
+        ]);
+    }
+
+    /**
+     * The signed-in member's brand profile, typed.
+     *
+     * Read back through a query rather than the relation so the type stays
+     * concrete, and so the role check and the missing-profile check live in one
+     * place instead of being repeated at every call site.
+     */
+    private function brandProfileFor(Request $request): BrandProfile
+    {
+        $user = $request->user();
+        $this->ensureRole($user, 'brand');
+
+        $profile = BrandProfile::query()->where('user_id', $user->getAuthIdentifier())->first();
+        abort_unless($profile !== null, 403);
+
+        return $profile;
     }
 
     private function ensureRole(User $user, string $role): void
@@ -112,17 +140,94 @@ class WorkspaceController extends Controller
 
     public function saveBrand(Request $request): RedirectResponse
     {
-        $this->ensureRole($request->user(), 'brand');
-        $profile = $request->user()->fresh()->brandProfile;
-        abort_unless($profile, 403);
+        $profile = $this->brandProfileFor($request);
         $data = $request->validate([
             'company_name' => ['required', 'string', 'max:160'],
+            'legal_name' => ['nullable', 'string', 'max:200'],
             'website' => ['nullable', 'url'],
             'industry' => ['nullable', 'string', 'max:120'],
+            // Format-checked, never treated as proof: a well-formed GSTIN is
+            // still only a claim until the certificate is reviewed. Case is
+            // ignored here and normalised below, so a lower-case paste is not
+            // rejected for something that is not a mistake.
+            'gstin' => ['nullable', 'string', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]{3}$/i'],
+            'pan' => ['nullable', 'string', 'regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i'],
+            'cin' => ['nullable', 'string', 'max:25'],
+            'registered_address' => ['nullable', 'string', 'max:1000'],
+            'billing_state' => ['nullable', 'string', 'max:64'],
+            'billing_country' => ['nullable', 'string', 'max:64'],
+            'billing_pincode' => ['nullable', 'string', 'max:12'],
+            'authorized_person_name' => ['nullable', 'string', 'max:160'],
+            'authorized_person_designation' => ['nullable', 'string', 'max:120'],
+            'authorized_person_email' => ['nullable', 'email', 'max:190'],
+            'authorized_person_phone' => ['nullable', 'string', 'max:24'],
         ]);
+
+        foreach (['gstin', 'pan'] as $upper) {
+            if (filled($data[$upper] ?? null)) {
+                $data[$upper] = strtoupper($data[$upper]);
+            }
+        }
+
+        // A verified brand that edits its details stays verified; re-review is
+        // an operator decision, not something a form field triggers.
         $profile->update($data + ['verification_status' => $profile->verification_status === 'verified' ? 'verified' : 'pending_review']);
 
-        return back()->with('status', __('Brand profile saved for verification.'));
+        $missing = $profile->refresh()->missingForVerification();
+
+        return back()->with('status', $missing === []
+            ? __('Brand profile saved. Everything verification needs is on file.')
+            : __('Saved. Verification still needs: :list', ['list' => implode(', ', $missing)]));
+    }
+
+    /**
+     * Upload one supporting document. The file goes to object storage; the
+     * database keeps the key.
+     */
+    public function uploadBrandDocument(Request $request, MediaStorage $media, AuditLogger $audit): RedirectResponse
+    {
+        $profile = $this->brandProfileFor($request);
+
+        $data = $request->validate([
+            'kind' => ['required', 'string', Rule::in(array_keys(BrandDocument::KINDS))],
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+        ]);
+
+        $file = $request->file('document');
+        $key = $media->keyFor('brand-documents/'.$profile->id, $file);
+
+        abort_unless($media->put($key, $file), 500);
+
+        BrandDocument::query()->create([
+            'brand_profile_id' => $profile->id,
+            'kind' => $data['kind'],
+            'original_name' => $file->getClientOriginalName(),
+            'disk' => $media->disk(),
+            'storage_key' => $key,
+            'size_bytes' => $file->getSize() ?: 0,
+            'mime' => $file->getMimeType(),
+            'review_status' => 'pending',
+        ]);
+
+        $audit->record('brand.document_uploaded', $profile, ['kind' => $data['kind']]);
+
+        return back()->with('status', __('Document uploaded. It is pending review — uploading it does not verify the brand.'));
+    }
+
+    public function deleteBrandDocument(Request $request, BrandDocument $document, MediaStorage $media, AuditLogger $audit): RedirectResponse
+    {
+        $profile = $this->brandProfileFor($request);
+        abort_unless($document->brand_profile_id === $profile->id, 404);
+
+        // A document an operator has already accepted stays on file; removing
+        // the evidence behind a decision would leave the decision unexplained.
+        abort_if($document->review_status === 'approved', 403);
+
+        $media->delete($document->disk, $document->storage_key);
+        $audit->record('brand.document_removed', $profile, ['kind' => $document->kind]);
+        $document->delete();
+
+        return back()->with('status', __('Document removed.'));
     }
 
     public function campaigns(): View
