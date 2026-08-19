@@ -8,11 +8,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @include('partials.theme-head')
 </head>
 <body>
     <div class="auth-shell">
         <div class="auth-card">
-            <a class="brand" href="{{ route('home') }}">{{ config('app.name') }}</a>
+            <div class="auth-top">
+                <a class="brand" href="{{ route('home') }}">{{ config('app.name') }}</a>
+                @include('partials.theme-toggle')
+            </div>
             @if ($errors->any())
                 <p class="error">{{ $errors->first() }}</p>
             @endif
