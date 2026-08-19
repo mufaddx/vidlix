@@ -154,9 +154,15 @@ class ThemeAndButtonContrastTest extends TestCase
             ->assertSee('vidlix-theme', false);
     }
 
-    public function test_the_login_screen_offers_a_theme_toggle(): void
+    public function test_the_auth_screens_use_their_own_dark_theme(): void
     {
-        $this->get('/login')->assertOk()->assertSee('data-theme-toggle', false);
+        // Sign-in is deliberately dark-only and shares no stylesheet with the
+        // marketplace, so a change to one cannot break the other.
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('css/auth.css', false)
+            ->assertDontSee('data-theme-toggle', false)
+            ->assertDontSee('css/app.css', false);
     }
 
     public function test_the_workspace_offers_a_theme_toggle(): void

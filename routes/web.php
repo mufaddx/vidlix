@@ -18,7 +18,8 @@ use App\Http\Controllers\App\RoleApplicationController;
 use App\Http\Controllers\App\WorkspaceController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\PasswordResetFlowController;
+use App\Http\Controllers\Auth\SignupFlowController;
 use App\Http\Controllers\Managers\ManagerInvitationController;
 use App\Http\Controllers\Site\CreatorPublicController;
 use App\Http\Controllers\Site\EditorPublicController;
@@ -44,8 +45,23 @@ Route::get('/u/{username}', [CreatorPublicController::class, 'show'])->name('cre
 Route::post('/u/{username}/inquire', [CreatorPublicController::class, 'inquire'])->middleware('throttle:public-form')->name('creators.inquire');
 
 Route::middleware('guest')->group(function () {
-    Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:register');
+    /*
+     | Sign-up runs in three steps and creates no user until all three are done.
+     | The middle step is a real emailed code, so these endpoints are throttled
+     | as tightly as the login form.
+     */
+    Route::get('/register', [SignupFlowController::class, 'create'])->name('register');
+    Route::post('/register/start', [SignupFlowController::class, 'start'])->middleware('throttle:register')->name('register.start');
+    Route::post('/register/verify', [SignupFlowController::class, 'verify'])->middleware('throttle:otp')->name('register.verify');
+    Route::post('/register/resend', [SignupFlowController::class, 'resend'])->middleware('throttle:otp')->name('register.resend');
+    Route::post('/register', [SignupFlowController::class, 'complete'])->middleware('throttle:register')->name('register.complete');
+
+    Route::get('/forgot-password', [PasswordResetFlowController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password/start', [PasswordResetFlowController::class, 'start'])->middleware('throttle:otp')->name('password.start');
+    Route::post('/forgot-password/verify', [PasswordResetFlowController::class, 'verify'])->middleware('throttle:otp')->name('password.verify');
+    Route::post('/forgot-password/resend', [PasswordResetFlowController::class, 'resend'])->middleware('throttle:otp')->name('password.resend');
+    Route::post('/forgot-password', [PasswordResetFlowController::class, 'complete'])->middleware('throttle:otp')->name('password.complete');
+
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
 });

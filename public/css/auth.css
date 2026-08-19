@@ -1,0 +1,352 @@
+/* ---------------------------------------------------------------------------
+   Vidlix authentication.
+
+   Premium minimal dark: one surface, one border, one accent, and nothing that
+   does not carry meaning. These screens are the first thing a stranger sees, so
+   they are held to a stricter standard than the rest of the product — every
+   state (loading, error, success) is visible and named rather than implied.
+--------------------------------------------------------------------------- */
+:root {
+  --bg: #0d0f12;
+  --surface: #161922;
+  --surface-2: #1b1f2a;
+  --line: #2a2f3a;
+  --line-strong: #39404e;
+  --ink: #ffffff;
+  --muted: #8f9cae;
+  --accent: #3b82f6;
+  --accent-soft: rgba(59, 130, 246, 0.14);
+  --accent-ink: #ffffff;
+  --ok: #34d399;
+  --danger: #f87171;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --font: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.55;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- Shell --------------------------------------------------------------- */
+.auth-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  /* One soft light source, top-centre. Enough depth to lift the card off the
+     background without becoming decoration. */
+  background:
+    radial-gradient(900px 420px at 50% -12%, rgba(59, 130, 246, 0.10), transparent 70%),
+    var(--bg);
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 32px 30px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.auth-brand { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 26px; color: var(--ink); }
+.auth-brand:hover { text-decoration: none; }
+
+.auth-title { font-size: 23px; font-weight: 700; letter-spacing: -0.025em; margin: 0 0 6px; }
+.auth-sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+.auth-sub strong { color: var(--ink); font-weight: 600; }
+
+/* --- Step indicator ------------------------------------------------------ */
+.steps { display: flex; gap: 6px; margin-bottom: 26px; }
+.steps span {
+  height: 3px; flex: 1; border-radius: 3px; background: var(--line);
+  transition: background 320ms ease;
+}
+.steps span.is-done { background: var(--accent); }
+
+/* --- Fields -------------------------------------------------------------- */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: var(--ink); }
+
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="tel"],
+.field input[type="password"] {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.field input::placeholder { color: #5d6879; }
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field input[aria-invalid="true"] { border-color: var(--danger); }
+
+.field-error { color: var(--danger); font-size: 12.5px; margin: 6px 0 0; min-height: 1em; }
+
+/* Password reveal sits inside the field rather than beside it. */
+.field-password { position: relative; }
+.field-password input { padding-right: 46px; }
+.reveal {
+  position: absolute; right: 6px; bottom: 5px;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  background: none; border: 0; border-radius: 8px;
+  color: var(--muted); cursor: pointer;
+}
+.reveal:hover { color: var(--ink); background: var(--line); }
+.reveal svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.reveal .icon-hide { display: none; }
+.reveal[aria-pressed="true"] .icon-hide { display: block; }
+.reveal[aria-pressed="true"] .icon-show { display: none; }
+
+/* --- Role selector ------------------------------------------------------- */
+.roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+.role {
+  position: relative;
+  display: grid; place-items: center; gap: 4px;
+  padding: 14px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.role:hover { border-color: var(--line-strong); }
+.role input { position: absolute; opacity: 0; pointer-events: none; }
+.role-name { font-size: 13px; font-weight: 600; }
+.role-hint { font-size: 11px; color: var(--muted); }
+.role:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.role:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- Checkboxes: one treatment, everywhere ------------------------------- */
+.check {
+  display: flex; align-items: flex-start; gap: 11px;
+  font-size: 13.5px; color: var(--muted); cursor: pointer;
+  margin-bottom: 18px; line-height: 1.5;
+}
+/* A real checkbox, restyled — not a div pretending. Keyboard, screen readers
+   and form submission all keep working. */
+.check input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; flex: none; margin: 1px 0 0;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--surface-2);
+  cursor: pointer;
+  display: grid; place-content: center;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.check input[type="checkbox"]::after {
+  content: "";
+  width: 10px; height: 10px;
+  transform: scale(0);
+  transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: inset 1em 1em var(--accent-ink);
+  clip-path: polygon(14% 44%, 0 65%, 44% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.check input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+.check input[type="checkbox"]:checked::after { transform: scale(1); }
+.check input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.check a { font-weight: 600; }
+
+/* --- Buttons ------------------------------------------------------------- */
+.btn {
+  width: 100%;
+  min-height: 48px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  padding: 0 18px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit; font-size: 14.5px; font-weight: 600;
+  cursor: pointer;
+  transition: filter 160ms ease, transform 120ms ease;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn.ghost:hover:not(:disabled) { background: var(--surface-2); filter: none; }
+.btn.link { background: none; border: 0; color: var(--accent); min-height: 0; width: auto; padding: 0; font-size: 13.5px; }
+.btn.link:disabled { color: var(--muted); opacity: 1; }
+
+.spinner {
+  width: 16px; height: 16px; flex: none;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 640ms linear infinite;
+  display: none;
+}
+.btn.is-busy .spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.auth-foot { margin-top: 22px; text-align: center; font-size: 13.5px; color: var(--muted); }
+.auth-alt { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+/* --- Notices ------------------------------------------------------------- */
+.notice {
+  padding: 11px 14px; border-radius: var(--radius);
+  font-size: 13.5px; margin-bottom: 18px; border: 1px solid;
+}
+.notice.info { background: var(--accent-soft); border-color: rgba(59, 130, 246, 0.3); color: #bfd4f7; }
+.notice.ok { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.3); color: #9df0cd; }
+.notice.bad { background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.32); color: #fca9a9; }
+.notice[hidden] { display: none; }
+
+/* --- Steps --------------------------------------------------------------- */
+.step[hidden] { display: none; }
+.step { animation: stepIn 320ms cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes stepIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* --- OTP ----------------------------------------------------------------- */
+.otp-stage { position: relative; min-height: 132px; display: grid; place-items: center; margin-bottom: 6px; }
+
+.otp-boxes {
+  display: flex; gap: 9px; justify-content: center;
+  transition: opacity 380ms ease, transform 420ms cubic-bezier(0.5, 0, 0.75, 0);
+}
+.otp-boxes input {
+  width: 46px; height: 56px;
+  text-align: center;
+  font-size: 21px; font-weight: 650; font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+.otp-boxes input:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  transform: translateY(-1px);
+}
+.otp-boxes input.is-filled { border-color: var(--line-strong); }
+
+/* The morph: the digits collapse inward toward the hub as the orbit appears,
+   so the two read as one object changing state rather than two swapped views. */
+.otp-stage.is-verifying .otp-boxes,
+.otp-stage.is-done .otp-boxes {
+  opacity: 0;
+  transform: scale(0.55);
+  pointer-events: none;
+}
+
+.orbit {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  opacity: 0; transform: scale(0.7);
+  pointer-events: none;
+  transition: opacity 380ms ease 120ms, transform 520ms cubic-bezier(0.22, 1, 0.36, 1) 120ms;
+}
+.otp-stage.is-verifying .orbit,
+.otp-stage.is-done .orbit { opacity: 1; transform: scale(1); }
+
+.orbit svg { width: 112px; height: 112px; overflow: visible; }
+.orbit-ring { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.orbit-arc {
+  fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round;
+  stroke-dasharray: 44 300;
+  transform-origin: 50% 50%;
+  animation: orbitSpin 1.15s linear infinite;
+}
+.orbit-arc.slow { stroke: rgba(59, 130, 246, 0.45); animation-duration: 1.9s; animation-direction: reverse; }
+.orbit-hub { fill: var(--accent); transform-origin: 50% 50%; animation: hubPulse 1.15s ease-in-out infinite; }
+.orbit-moon { fill: var(--accent); transform-origin: 50% 50%; animation: orbitSpin 1.15s linear infinite; }
+
+@keyframes orbitSpin { to { transform: rotate(360deg); } }
+@keyframes hubPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.72); opacity: 0.65; } }
+
+/* Success: the spin stops, the ring completes, a tick draws itself. */
+.otp-stage.is-done .orbit-arc { animation: none; stroke-dasharray: 300 300; stroke: var(--ok); transition: stroke-dasharray 520ms ease, stroke 260ms ease; }
+.otp-stage.is-done .orbit-arc.slow { opacity: 0; }
+.otp-stage.is-done .orbit-hub, .otp-stage.is-done .orbit-moon { animation: none; opacity: 0; transition: opacity 200ms ease; }
+.orbit-check {
+  fill: none; stroke: var(--ok); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 40; stroke-dashoffset: 40; opacity: 0;
+}
+.otp-stage.is-done .orbit-check { opacity: 1; animation: drawCheck 420ms 220ms ease forwards; }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+.otp-meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); margin: 14px 0 20px; }
+.otp-timer { font-variant-numeric: tabular-nums; }
+
+/* --- Terms modal --------------------------------------------------------- */
+.modal[hidden] { display: none; }
+.modal {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center;
+  padding: 20px;
+  background: rgba(4, 6, 9, 0.72);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 200ms ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  width: min(600px, 100%);
+  max-height: min(76vh, 720px);
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  animation: modalIn 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+.modal-head { padding: 22px 24px 14px; border-bottom: 1px solid var(--line); }
+.modal-head h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.modal-head p { margin: 5px 0 0; color: var(--muted); font-size: 13.5px; }
+.modal-role { display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent-soft); color: #a9c8f7; }
+
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.term { margin-bottom: 18px; }
+.term:last-child { margin-bottom: 0; }
+.term h3 { margin: 0 0 5px; font-size: 14px; font-weight: 650; }
+.term p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.62; }
+
+.modal-foot { padding: 16px 24px 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.modal-note { margin: 0; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 26px 20px; }
+  .otp-boxes { gap: 6px; }
+  .otp-boxes input { width: 42px; height: 52px; font-size: 19px; }
+  .roles { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  /* The orbit still appears, it simply does not spin. */
+  .otp-stage.is-verifying .orbit, .otp-stage.is-done .orbit { opacity: 1; transform: none; }
+}

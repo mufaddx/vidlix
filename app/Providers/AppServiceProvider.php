@@ -115,6 +115,9 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Registered::class, SendEmailVerificationNotification::class);
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by($request->ip().'|'.$request->input('login')));
         RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        // OtpService applies its own per-destination limits; this is the outer
+        // guard so one IP cannot hammer the endpoints at all.
+        RateLimiter::for('otp', fn (Request $request) => Limit::perMinute(12)->by($request->ip()));
         RateLimiter::for('public-form', fn (Request $request) => Limit::perMinute(8)->by($request->ip()));
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));

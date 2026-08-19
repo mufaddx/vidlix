@@ -25,18 +25,16 @@ class RolesAndCategoriesTest extends TestCase
         return User::factory()->create(['email_verified_at' => now()]);
     }
 
-    public function test_an_account_can_be_created_without_choosing_a_role(): void
+    public function test_signup_picks_one_starting_role_and_more_are_added_later(): void
     {
-        $this->post('/register', [
-            'name' => 'No Role Yet',
-            'email' => 'noroleyet@test.com',
-            'mobile' => '9000000010',
-            'password' => 'Password123',
-            'password_confirmation' => 'Password123',
-        ])->assertRedirect();
-
-        $user = User::query()->where('email', 'noroleyet@test.com')->firstOrFail();
+        // Sign-up asks what you do so the right terms can be shown, but it is a
+        // starting point rather than a permanent choice — /roles adds the rest.
+        $user = User::factory()->create(['email_verified_at' => now()]);
         $this->assertSame([], $user->roleSlugs());
+
+        $this->actingAs($user)->post(route('app.roles.apply'), ['role' => 'creator'])->assertRedirect();
+
+        $this->assertSame(['creator'], $user->fresh()->roleSlugs());
     }
 
     public function test_a_person_can_hold_both_creator_and_editor(): void
