@@ -13,13 +13,11 @@ use App\Models\Campaign;
 use App\Models\CampaignApplication;
 use App\Models\CommissionRule;
 use App\Models\Conversation;
-use App\Models\CreatorManagerRelationship;
 use App\Models\Dispute;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\ManagementSubscription;
 use App\Models\ManagerActivityLog;
-use App\Models\ManagerInvitation;
 use App\Models\Message;
 use App\Models\Payment;
 use App\Models\PayoutAccount;
@@ -451,51 +449,12 @@ class MarketplaceEngine
         return ['status' => $result['status'], 'detail' => $result['detail']];
     }
 
-    public function inviteManager(User $creator, array $data): ManagerInvitation
-    {
-        $invite = ManagerInvitation::query()->create([
-            'creator_user_id' => $creator->id,
-            'email' => $data['email'],
-            'name' => $data['name'] ?? null,
-            'mobile' => $data['mobile'] ?? null,
-            'token' => Str::lower(Str::ulid()),
-            'permissions' => $data['permissions'] ?? [],
-            'status' => 'invited',
-        ]);
-        $this->audit->record('manager.invited', $invite);
-
-        return $invite;
-    }
-
-    public function acceptManagerInvite(User $manager, string $token): CreatorManagerRelationship
-    {
-        $invite = ManagerInvitation::query()->where('token', $token)->where('status', 'invited')->firstOrFail();
-        if (strcasecmp($invite->email, $manager->email) !== 0) {
-            abort(403);
-        }
-        $rel = CreatorManagerRelationship::query()->updateOrCreate(
-            [
-                'creator_user_id' => $invite->creator_user_id,
-                'manager_user_id' => $manager->id,
-            ],
-            [
-                'status' => 'active',
-                'permissions' => $invite->permissions,
-                'accepted_at' => now(),
-                'revoked_at' => null,
-            ],
-        );
-        $invite->update(['status' => 'accepted', 'accepted_at' => now()]);
-        $this->audit->record('manager.accepted', $rel);
-
-        return $rel;
-    }
-
-    public function logManager(int $creatorId, int $managerId, string $action, array $meta = []): void
+    public function logManager(int $ownerId, int $managerId, string $scope, string $action, array $meta = []): void
     {
         ManagerActivityLog::query()->create([
-            'creator_user_id' => $creatorId,
+            'creator_user_id' => $ownerId,
             'manager_user_id' => $managerId,
+            'scope' => $scope,
             'action' => $action,
             'meta' => $meta,
         ]);

@@ -78,9 +78,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(ManagerProfile::class);
     }
 
-    public function managedCreators(): HasMany
+    /** Accounts this user manages on somebody else's behalf. */
+    public function managerAssignments(): HasMany
     {
-        return $this->hasMany(CreatorManagerRelationship::class, 'manager_user_id');
+        return $this->hasMany(ManagerAssignment::class, 'manager_user_id');
+    }
+
+    /** Managers appointed over this user's own accounts. */
+    public function managedByAssignments(): HasMany
+    {
+        return $this->hasMany(ManagerAssignment::class, 'owner_user_id');
     }
 
     public function ledgerAccounts(): HasMany

@@ -273,6 +273,16 @@ textarea { min-height: 120px; resize: vertical; }
 .side .brand { display: block; margin-bottom: 18px; }
 .side-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .side-head .brand { margin-bottom: 0; }
+/* Account switcher: own account plus every managed account. */
+.switcher { display: grid; gap: 4px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.switcher-label { margin: 0 0 4px; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.switcher form { margin: 0; }
+.switcher-item { display: grid; width: 100%; text-align: left; gap: 1px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-elev); color: var(--ink); font: inherit; cursor: pointer; }
+.switcher-item:hover:not(:disabled) { border-color: var(--accent); }
+.switcher-item.is-active { background: var(--surface); border-color: var(--accent); cursor: default; }
+.switcher-name { font-weight: 650; font-size: 0.92rem; }
+.switcher-sub { font-size: 0.72rem; color: var(--muted); }
+
 .side-nav { display: grid; gap: 2px; margin-bottom: 16px; }
 .side a { display: flex; align-items: center; min-height: 40px; padding: 8px 12px; border-radius: 10px; color: var(--muted); }
 .side a.active, .side a:hover { background: var(--surface); color: var(--ink); }

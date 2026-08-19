@@ -9,11 +9,11 @@ use App\Models\BlogPost;
 use App\Models\Campaign;
 use App\Models\CampaignApplication;
 use App\Models\Conversation;
-use App\Models\CreatorManagerRelationship;
 use App\Models\Dispute;
 use App\Models\Invoice;
 use App\Models\LedgerEntry;
 use App\Models\ManagementPlan;
+use App\Models\ManagerAssignment;
 use App\Models\ManagerInvitation;
 use App\Models\Payment;
 use App\Models\PortfolioItem;
@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
+use App\Services\Managers\ManagerDirectory;
 use App\Services\Marketplace\MarketplaceEngine;
 use App\Services\Workspace\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -45,12 +46,23 @@ class WorkspaceController extends Controller
         return back();
     }
 
+    /** Account switcher. The owner id is checked against live assignments. */
     public function manage(Request $request, WorkspaceContext $workspace): RedirectResponse
     {
-        $data = $request->validate(['creator_user_id' => ['required', 'integer']]);
-        $workspace->switchManagedCreator($request->user(), (int) $data['creator_user_id']);
+        $data = $request->validate([
+            'owner_user_id' => ['required', 'integer'],
+            'scope' => ['nullable', 'in:creator,brand,editor'],
+        ]);
 
-        return back();
+        if ((int) $data['owner_user_id'] === $request->user()->id) {
+            $workspace->actAsSelf();
+
+            return redirect()->route('dashboard');
+        }
+
+        $workspace->actAs($request->user(), (int) $data['owner_user_id'], (string) ($data['scope'] ?? ''));
+
+        return redirect()->route('dashboard');
     }
 
     public function editors(): View
@@ -304,34 +316,41 @@ class WorkspaceController extends Controller
         return back()->with('status', __('Withdrawal requested. Payout waits on provider + admin verification.'));
     }
 
-    public function managers(): View
+    public function managers(ManagerDirectory $directory): View
     {
         $user = request()->user();
-        $invites = ManagerInvitation::query()->where('creator_user_id', $user->id)->latest()->get();
-        $rels = CreatorManagerRelationship::query()->where('creator_user_id', $user->id)->orWhere('manager_user_id', $user->id)->get();
-        $plans = ManagementPlan::query()->where('is_active', true)->get();
-        $incoming = ManagerInvitation::query()->where('email', $user->email)->where('status', 'invited')->get();
 
-        return view('app.managers', compact('invites', 'rels', 'plans', 'incoming'));
+        return view('app.managers', [
+            // Managers this person has appointed over their own accounts.
+            'invites' => ManagerInvitation::query()->where('owner_user_id', $user->id)->latest()->get(),
+            'appointed' => ManagerAssignment::query()->where('owner_user_id', $user->id)->with('manager:id,name,email')->get(),
+            // Accounts this person manages for somebody else.
+            'representing' => ManagerAssignment::query()->active()->where('manager_user_id', $user->id)->with('owner:id,name,email')->get(),
+            'scopes' => $directory->ownedScopes($user),
+            'plans' => ManagementPlan::query()->where('is_active', true)->get(),
+        ]);
     }
 
-    public function inviteManager(Request $request): RedirectResponse
+    public function inviteManager(Request $request, ManagerDirectory $directory): RedirectResponse
     {
-        abort_unless($request->user()->creatorProfile, 403);
-        $this->engine->inviteManager($request->user(), $request->validate([
+        $data = $request->validate([
+            'scope' => ['required', 'in:creator,brand,editor'],
             'email' => ['required', 'email'],
-            'name' => ['nullable', 'string'],
-            'mobile' => ['nullable', 'string'],
-        ]));
+            'name' => ['nullable', 'string', 'max:120'],
+            'mobile' => ['nullable', 'string', 'max:20'],
+        ]);
+        $directory->invite($request->user(), $data['scope'], $data);
 
         return back()->with('status', __('Invitation stored. Manager must accept with the same email.'));
     }
 
-    public function acceptInvite(Request $request, string $token): RedirectResponse
+    public function acceptInvite(Request $request, string $token, ManagerDirectory $directory): RedirectResponse
     {
-        $this->engine->acceptManagerInvite($request->user(), $token);
+        $invitation = $directory->findOpenInvitation($token);
+        abort_unless($invitation !== null, 404);
+        $directory->acceptAsExistingUser($invitation, $request->user());
 
-        return back()->with('status', __('Manager access active. Workspace switcher uses server-side authorization.'));
+        return back()->with('status', __('Manager access active. Use the account switcher to act for that account.'));
     }
 
     public function subscribe(Request $request): RedirectResponse
@@ -342,12 +361,11 @@ class WorkspaceController extends Controller
         return back()->with('status', __('Subscription recorded. Charging requires a payment provider.'));
     }
 
-    public function revokeManager(CreatorManagerRelationship $relationship): RedirectResponse
+    public function revokeManager(ManagerAssignment $assignment, ManagerDirectory $directory): RedirectResponse
     {
-        abort_unless($relationship->creator_user_id === request()->user()->id, 403);
-        $relationship->update(['status' => 'revoked', 'revoked_at' => now()]);
+        $directory->revoke(request()->user(), $assignment);
 
-        return back()->with('status', __('Access revoked. Audit history kept.'));
+        return back()->with('status', __('Manager access revoked. It stops on their very next request.'));
     }
 
     public function automations(InstagramProviderInterface $instagram): View

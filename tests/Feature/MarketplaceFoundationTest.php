@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Campaign;
 use App\Models\Conversation;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Creator\CreatorOnboardingService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -55,7 +57,7 @@ class MarketplaceFoundationTest extends TestCase
 
         $intruder = User::factory()->create();
         $intruder->roles()->attach(Role::query()->where('slug', 'creator')->first());
-        app(\App\Services\Creator\CreatorOnboardingService::class)->provision($intruder->id, $intruder->name);
+        app(CreatorOnboardingService::class)->provision($intruder->id, $intruder->name);
 
         $this->actingAs($intruder)
             ->get('/creator/inbox/'.$uuid)
@@ -78,8 +80,8 @@ class MarketplaceFoundationTest extends TestCase
 
     public function test_published_campaign_application_persists(): void
     {
-        $this->actingAs(\App\Models\User::query()->where('email', 'creator@vidlix.test')->first());
-        $campaign = \App\Models\Campaign::query()->where('slug', 'summer-reels')->firstOrFail();
+        $this->actingAs(User::query()->where('email', 'creator@vidlix.test')->first());
+        $campaign = Campaign::query()->where('slug', 'summer-reels')->firstOrFail();
         $this->post(route('app.campaigns.apply', $campaign), [
             'proposed_fee_minor' => 2500000,
             'message' => 'I can deliver eight reels.',

@@ -49,6 +49,15 @@ class WorkspacePagesSmokeTest extends TestCase
             ->assertSee('Ledger', false);
     }
 
+    public function test_the_management_page_renders_with_the_new_manager_model(): void
+    {
+        $this->actingAs($this->creator())
+            ->get('/management')
+            ->assertOk()
+            ->assertSee('Appoint a manager', false)
+            ->assertSee('Nobody can apply to manage your account', false);
+    }
+
     public function test_the_admin_finance_page_offers_no_way_to_mark_a_payout_paid(): void
     {
         $admin = User::factory()->create(['email_verified_at' => now()]);

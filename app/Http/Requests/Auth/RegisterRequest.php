@@ -19,7 +19,9 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'mobile' => ['required', 'string', 'max:20', 'unique:users,mobile'],
             'password' => ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()],
-            'role' => ['required', 'in:creator,editor,brand,manager'],
+            // Manager is deliberately absent: nobody signs up as a manager.
+            // A manager exists only because an account holder appointed them.
+            'role' => ['required', 'in:creator,editor,brand'],
         ];
     }
 }

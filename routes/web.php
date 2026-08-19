@@ -11,6 +11,7 @@ use App\Http\Controllers\App\WorkspaceController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Managers\ManagerInvitationController;
 use App\Http\Controllers\Site\CreatorPublicController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Webhooks\WebhookController;
@@ -38,6 +39,16 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
+
+/*
+ | Manager invitations are reachable without an account on purpose: the invited
+ | person usually does not have one yet and sets their password here. The
+ | emailed token is the only credential, and it expires.
+ */
+Route::get('/manager/invite/{token}', [ManagerInvitationController::class, 'show'])->name('managers.invitation');
+Route::post('/manager/invite/{token}', [ManagerInvitationController::class, 'activate'])
+    ->middleware('throttle:register')
+    ->name('managers.invitation.activate');
 
 Route::prefix('webhooks')->middleware('throttle:webhooks')->group(function () {
     Route::match(['get', 'post'], 'meta', [WebhookController::class, 'meta']);
@@ -93,7 +104,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/management/invite', [WorkspaceController::class, 'inviteManager'])->name('app.managers.invite');
         Route::post('/management/accept/{token}', [WorkspaceController::class, 'acceptInvite'])->name('app.managers.accept');
         Route::post('/management/subscribe', [WorkspaceController::class, 'subscribe'])->name('app.managers.subscribe');
-        Route::post('/management/{relationship}/revoke', [WorkspaceController::class, 'revokeManager'])->name('app.managers.revoke');
+        Route::post('/management/{assignment}/revoke', [WorkspaceController::class, 'revokeManager'])->name('app.managers.revoke');
         Route::get('/automations', [WorkspaceController::class, 'automations'])->name('app.automations');
         Route::post('/automations', [WorkspaceController::class, 'storeAutomation'])->name('app.automations.store');
         Route::get('/instagram', [WorkspaceController::class, 'instagram'])->name('app.instagram');

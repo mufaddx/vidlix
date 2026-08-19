@@ -3,6 +3,7 @@
         <a class="brand" href="{{ route('home') }}">{{ config('app.name') }}</a>
         @include('partials.theme-toggle')
     </div>
+    @include('partials.account-switcher')
     <nav class="side-nav" aria-label="{{ __('Workspace') }}">
         <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">{{ __('Home') }}</a>
         <a class="{{ request()->routeIs('app.notifications') ? 'active' : '' }}" href="{{ route('app.notifications') }}">{{ __('Notifications') }}</a>

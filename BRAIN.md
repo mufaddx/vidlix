@@ -31,8 +31,10 @@ weaken a test to make a provider look configured.
 4. Payment settlement needs **both** a verified webhook signature **and** the
    provider API confirming it. A browser redirect is never authoritative.
 5. Instagram uses **official Meta Graph API only**. Scraping is forbidden.
-6. Manager actions store `actor_user_id` + `acting_for_creator_id`. A
-   client-supplied `creator_id` is never trusted.
+6. **Nobody applies to be a manager.** A manager exists only because an account
+   holder appointed them, or because Vidlix provided one. Managers are checked
+   against `manager_assignments` on every request; the session holds ids only,
+   never a permission, so a tampered session grants nothing.
 7. Media lives in object storage; MySQL stores keys and metadata only.
 8. The public form builder cannot inject HTML/JS/CSS.
 
@@ -55,6 +57,8 @@ app/
     Instagram/          MetaEventHandler
     Media/              MediaStorage              ← object storage keys
     Webhooks/           WebhookProcessor, SignatureVerifier, WebhookDispatcher
+    Managers/           ManagerDirectory          ← appointing / activating managers
+    Workspace/          WorkspaceContext          ← who you are acting as
     Marketplace/        MarketplaceEngine         ← the big domain service
   Http/Controllers/
     Api/V1/             AuthController, MarketplaceController, WorkspaceApiController
@@ -78,6 +82,8 @@ half-working integration.
 | `app/Services/Payments/PaymentSettlementService.php` | Only path that captures money |
 | `app/Services/Ledger/LedgerService.php` | Append-only ledger, uuid5 idempotency |
 | `app/Services/Webhooks/SignatureVerifier.php` | Per-provider signature schemes |
+| `app/Services/Workspace/WorkspaceContext.php` | Account switcher + manager authorisation |
+| `app/Services/Managers/ManagerDirectory.php` | Manager invite / activate / revoke |
 | `config/vidlix.php` | Every provider/token setting |
 | `routes/web.php`, `routes/api.php` | Full route surface |
 | `public/css/app.css` | Entire design system, tokenised, light+dark |
@@ -114,6 +120,11 @@ Hostinger with MySQL + SSL.
 - Legal CMS pages (`/p/terms`, `/p/privacy`, …) still contain placeholder text.
 - Creator payout bank-account onboarding UI does not exist; `payout_accounts`
   is admin/manual.
+- Editor/brand **category taxonomy** not built yet (admin list + custom, agreed).
+  `editor_profiles.specializations` and `brand_profiles.industry` are still free
+  text and cannot be filtered.
+- Signup still asks for a role. Agreed target: create the account first, then
+  apply as editor or brand afterwards.
 
 ---
 
@@ -159,6 +170,10 @@ fail `pint --test` (pre-existing, untouched).
   versions attach by default, so `config/filesystems.php` pins
   `request_checksum_calculation` / `response_checksum_validation` to
   `when_required`. Works for real S3 too.
+- Manager scope is one of creator | brand | editor, held in
+  `manager_assignments`. `source` is `owner` or `company` — the UI must say when
+  Vidlix provided the manager. An invitation link can create a *new* account and
+  set its password, but can never touch an existing account's password.
 - Rejected webhooks are logged under a throwaway id so a forged event cannot
   occupy the unique `provider_event_id` slot and suppress the genuine delivery.
 

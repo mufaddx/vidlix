@@ -9,11 +9,11 @@ use App\Contracts\PushProviderInterface;
 use App\Http\Controllers\Controller;
 use App\Models\CampaignApplication;
 use App\Models\Conversation;
-use App\Models\CreatorManagerRelationship;
 use App\Models\DeviceToken;
 use App\Models\Invoice;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
+use App\Models\ManagerAssignment;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\Withdrawal;
@@ -115,12 +115,14 @@ class WorkspaceApiController extends Controller
     public function managers(Request $request): JsonResponse
     {
         return $this->ok($request, [
-            'representing' => CreatorManagerRelationship::query()
+            'representing' => ManagerAssignment::query()
+                ->active()
                 ->where('manager_user_id', $request->user()->id)
-                ->with('creator:id,name,email')
+                ->with('owner:id,name,email')
                 ->get(),
-            'my_managers' => CreatorManagerRelationship::query()
-                ->where('creator_user_id', $request->user()->id)
+            'my_managers' => ManagerAssignment::query()
+                ->active()
+                ->where('owner_user_id', $request->user()->id)
                 ->with('manager:id,name,email')
                 ->get(),
         ]);

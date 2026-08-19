@@ -80,8 +80,9 @@ class InstagramController extends Controller
             return true;
         }
 
-        return $user->managedCreators()
-            ->where('creator_user_id', $profile->user_id)
+        return $user->managerAssignments()
+            ->where('owner_user_id', $profile->user_id)
+            ->where('scope', 'creator')
             ->where('status', 'active')
             ->exists();
     }
