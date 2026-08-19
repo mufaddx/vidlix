@@ -204,6 +204,11 @@ fail `pint --test` (pre-existing, untouched).
   are read and routed back), `noreply@` for transactional mail only. Mail to
   `help@` with no routing token opens a ticket rather than landing in the
   unmatched queue.
+- **Larastan runs against a baseline.** `phpstan-baseline.neon` holds 132
+  pre-existing findings, almost all the same pattern: `$request->user()`
+  resolves to `Model`, so `->id` looks undefined. CI fails on anything *new*.
+  That debt is acknowledged, not hidden — shrink it by typing the user
+  accessor, never by regenerating the baseline to bury a fresh error.
 - Rejected webhooks are logged under a throwaway id so a forged event cannot
   occupy the unique `provider_event_id` slot and suppress the genuine delivery.
 

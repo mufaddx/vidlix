@@ -1,0 +1,46 @@
+# Secret scanning configuration.
+#
+# The default rule set covers the providers this project uses (Razorpay,
+# Resend, AWS/R2, Meta). The additions below catch the project-specific shapes
+# a generic rule set would miss.
+title = "Vidlix secret scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "vidlix-cron-token"
+description = "Scheduler trigger token"
+regex = '''CRON_TOKEN\s*=\s*["']?[A-Za-z0-9_\-]{20,}'''
+tags = ["vidlix", "token"]
+
+[[rules]]
+id = "vidlix-razorpay-live"
+description = "Razorpay live key id"
+regex = '''rzp_live_[A-Za-z0-9]{10,}'''
+tags = ["razorpay", "payments"]
+
+[[rules]]
+id = "vidlix-resend-key"
+description = "Resend API key"
+regex = '''re_[A-Za-z0-9]{8,}_[A-Za-z0-9]{20,}'''
+tags = ["resend", "email"]
+
+[[rules]]
+id = "vidlix-svix-secret"
+description = "Svix / Resend webhook signing secret"
+regex = '''whsec_[A-Za-z0-9+/=]{20,}'''
+tags = ["webhook"]
+
+[allowlist]
+description = "Documentation placeholders and test fixtures are not real secrets"
+paths = [
+    '''\.env\.example$''',
+    '''docs/.*\.md$''',
+    '''tests/.*''',
+]
+regexes = [
+    '''rzp_test_[A-Za-z0-9]+''',
+    '''<R2 access key id>''',
+    '''<access key id>''',
+]

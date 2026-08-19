@@ -1,0 +1,95 @@
+name: CI
+
+# Runs on every pull request and on main. A red check here blocks the merge,
+# which is the entire point: the guarantee comes from the gate, not from
+# remembering to run these locally.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, analyse, test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # Must match production. The vendor tree resolves Symfony 8.1, which
+          # requires 8.4.1+; an older runtime fails before Laravel can boot.
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, intl, gd, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+
+      - name: Check formatting
+        run: vendor/bin/pint --test
+
+      - name: Static analysis
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test
+
+  # There is deliberately no asset-build job. This project serves hand-written
+  # CSS/JS from public/ and does not use Vite for anything a visitor loads, so
+  # building bundles nothing serves would only be a check that always passes.
+  # If Vite is adopted, add a job here with a committed package-lock.json.
+
+  security:
+    name: Secrets and SAST
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Gitleaks needs history to scan the commits in the PR, not just the
+          # final tree — a secret added and then removed is still leaked.
+          fetch-depth: 0
+
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Static application security testing
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/php
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten

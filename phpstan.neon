@@ -1,0 +1,19 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    # Level 5 is where Larastan starts catching real defects — wrong argument
+    # types, calls to methods that do not exist, unreachable branches — without
+    # drowning a Laravel codebase in framework-magic false positives.
+    level: 5
+
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests
+
+    excludePaths:
+        - vendor
