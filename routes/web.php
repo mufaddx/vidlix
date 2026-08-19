@@ -12,6 +12,7 @@ use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DiscoveryController;
 use App\Http\Controllers\App\InboxController;
 use App\Http\Controllers\App\InstagramController;
+use App\Http\Controllers\App\PrivacyController;
 use App\Http\Controllers\App\ProjectFileController;
 use App\Http\Controllers\App\PublicPageStudioController;
 use App\Http\Controllers\App\RoleApplicationController;
@@ -169,6 +170,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/notifications', [WorkspaceController::class, 'notifications'])->name('app.notifications');
         Route::get('/settings', [WorkspaceController::class, 'settings'])->name('app.settings');
         Route::post('/settings/sessions/{id}', [WorkspaceController::class, 'revokeSession'])->name('app.sessions.revoke');
+
+        // Your own data, and the door out. Deletion is throttled and asks for
+        // the password again, because it cannot be undone.
+        Route::get('/settings/privacy', [PrivacyController::class, 'show'])->name('app.privacy');
+        Route::get('/settings/privacy/export', [PrivacyController::class, 'export'])->middleware('throttle:6,1')->name('app.privacy.export');
+        Route::delete('/settings/privacy', [PrivacyController::class, 'destroy'])->middleware('throttle:3,60')->name('app.privacy.destroy');
         Route::get('/portfolio', [WorkspaceController::class, 'portfolio'])->name('app.portfolio');
         Route::post('/portfolio', [WorkspaceController::class, 'storePortfolio'])->name('app.portfolio.store');
         Route::get('/proposals', [WorkspaceController::class, 'proposals'])->name('app.proposals');
