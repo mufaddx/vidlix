@@ -15,7 +15,7 @@ email to cover the gap.
 | --- | --- | --- | --- |
 | Payments | `PaymentProviderInterface` | `razorpay` | `Services/Integrations/Payments/RazorpayPaymentProvider` |
 | Payouts | `PayoutProviderInterface` | `razorpay`, `razorpayx` | `Services/Integrations/Payments/RazorpayXPayoutProvider` |
-| Email | `EmailProviderInterface` | `sendgrid`, `smtp`, `ses`, `postmark` | `Services/Integrations/Email/{SendGrid,Smtp}EmailProvider` |
+| Email | `EmailProviderInterface` | `resend`, `sendgrid`, `smtp`, `ses`, `postmark` | `Services/Integrations/Email/{Resend,SendGrid,Smtp}EmailProvider` |
 | Instagram | `InstagramProviderInterface` | `meta`, `instagram_graph` | `Services/Integrations/Instagram/MetaInstagramProvider` |
 | Push | `PushProviderInterface` | `fcm`, `firebase` | `Services/Integrations/Push/FcmPushProvider` |
 
@@ -32,7 +32,7 @@ object that cannot do anything. A typo in `.env` therefore degrades to
 | `POST /webhooks/payment` | Razorpay | `PAYMENT_WEBHOOK_SECRET` | `hmac_hex` — `X-Razorpay-Signature` |
 | `POST /webhooks/payout` | RazorpayX | `PAYOUT_WEBHOOK_SECRET` | `hmac_hex` — `X-Razorpay-Signature` |
 | `POST /webhooks/email/inbound` | inbound mail | `EMAIL_WEBHOOK_SECRET` | `hmac_hex` (or `sendgrid_ecdsa` / `basic`) |
-| `POST /webhooks/email/events` | delivery / bounce | `EMAIL_WEBHOOK_SECRET` | same as inbound |
+| `POST /webhooks/email/events` | delivery / bounce | `EMAIL_WEBHOOK_SECRET` | same as inbound (`svix` for Resend) |
 | `GET /webhooks/meta` | Meta subscription check | `META_WEBHOOK_VERIFY_TOKEN` | `hub.verify_token` compared with `hash_equals` |
 | `POST /webhooks/meta` | Meta events | `META_APP_SECRET` | `hub_signature` — `X-Hub-Signature-256` |
 

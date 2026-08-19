@@ -66,6 +66,8 @@ class WebhookProcessor
                 hash('sha256', $request->getContent()),
             ],
             'email' => [
+                // svix-id is Resend's per-delivery id and is what a retry reuses.
+                $request->header('svix-id'),
                 $request->input('id'),
                 $request->input('MessageID'),
                 $request->input('sg_event_id'),

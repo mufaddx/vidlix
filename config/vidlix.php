@@ -20,6 +20,7 @@ return [
      |   hmac_hex        - hex HMAC-SHA256 of the raw body (Razorpay, generic)
      |   hub_signature   - "sha256=<hex hmac>" in X-Hub-Signature-256 (Meta)
      |   sendgrid_ecdsa  - ECDSA over timestamp+body (SendGrid Event Webhook)
+     |   svix            - Svix v1 signature (Resend)
      |   basic           - HTTP Basic credentials (Postmark inbound)
      */
     'webhooks' => [

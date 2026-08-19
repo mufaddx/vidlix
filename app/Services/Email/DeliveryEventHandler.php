@@ -20,7 +20,7 @@ class DeliveryEventHandler
         $handled = 0;
 
         foreach ($events as $event) {
-            $status = $this->normalizeStatus((string) ($event['event'] ?? $event['RecordType'] ?? ''));
+            $status = $this->normalizeStatus((string) ($event['event'] ?? $event['RecordType'] ?? $event['type'] ?? ''));
             if ($status === null) {
                 continue;
             }
@@ -66,21 +66,34 @@ class DeliveryEventHandler
     private function normalizeStatus(string $raw): ?string
     {
         return match (strtolower($raw)) {
-            'delivered', 'delivery' => 'delivered',
-            'bounce', 'blocked', 'dropped' => 'bounced',
-            'spamreport', 'spamcomplaint' => 'complained',
-            'deferred' => 'deferred',
-            'processed' => 'accepted',
+            'delivered', 'delivery', 'email.delivered' => 'delivered',
+            'bounce', 'blocked', 'dropped', 'email.bounced' => 'bounced',
+            'spamreport', 'spamcomplaint', 'email.complained' => 'complained',
+            'deferred', 'email.delivery_delayed' => 'deferred',
+            'processed', 'email.sent' => 'accepted',
             default => null,
         };
     }
 
     private function providerMessageId(array $event): ?string
     {
-        foreach (['sg_message_id', 'MessageID', 'message_id', 'provider_message_id'] as $key) {
-            $value = $event[$key] ?? null;
+        // Resend nests the id under data.email_id; the others keep it flat.
+        foreach (['sg_message_id', 'MessageID', 'message_id', 'provider_message_id', 'data.email_id', 'email_id'] as $key) {
+            $value = data_get($event, $key);
             if (is_string($value) && $value !== '') {
                 return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /** Resend may send tags as a list of {name, value} pairs rather than a map. */
+    private function resendTag(array $event): ?string
+    {
+        foreach ((array) data_get($event, 'data.tags', []) as $tag) {
+            if (is_array($tag) && ($tag['name'] ?? null) === 'vidlix_message_id') {
+                return (string) ($tag['value'] ?? '');
             }
         }
 
@@ -91,7 +104,9 @@ class DeliveryEventHandler
     {
         // custom_args / Metadata carry our own id, which survives provider rewrites.
         $ourId = $event['vidlix_message_id']
-            ?? ($event['Metadata']['vidlix_message_id'] ?? null);
+            ?? data_get($event, 'Metadata.vidlix_message_id')
+            ?? data_get($event, 'data.tags.vidlix_message_id')
+            ?? $this->resendTag($event);
         if (filled($ourId)) {
             $message = Message::query()->find((int) $ourId);
             if ($message) {

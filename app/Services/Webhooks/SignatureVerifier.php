@@ -23,6 +23,9 @@ class SignatureVerifier
 
     public const UNSUPPORTED = 'unsupported_scheme';
 
+    /** How far a Svix timestamp may drift before the delivery is treated as a replay. */
+    private const SVIX_TOLERANCE_SECONDS = 300;
+
     /** Secret each provider signs with. Meta signs with the app secret, not the verify token. */
     public function secretFor(string $provider): ?string
     {
@@ -58,6 +61,7 @@ class SignatureVerifier
             'hmac_hex' => $this->verifyHmacHex($provider, $request, (string) $secret),
             'hub_signature' => $this->verifyHubSignature($request, (string) $secret),
             'sendgrid_ecdsa' => $this->verifySendGridEcdsa($request),
+            'svix' => $this->verifySvix($request, (string) $secret),
             default => self::UNSUPPORTED,
         };
     }
@@ -140,6 +144,46 @@ class SignatureVerifier
         $result = openssl_verify($timestamp.$request->getContent(), $decoded, $key, OPENSSL_ALGO_SHA256);
 
         return $result === 1 ? self::VALID : self::INVALID;
+    }
+
+    /**
+     * Svix, used by Resend. The signed content is "{id}.{timestamp}.{raw body}",
+     * HMAC-SHA256 with the base64-decoded secret, then base64 encoded. The
+     * header may carry several space-separated "v1,<sig>" values and any one of
+     * them matching is enough, which is how Svix rotates signing keys.
+     */
+    private function verifySvix(Request $request, string $secret): string
+    {
+        $id = (string) $request->header('svix-id', '');
+        $timestamp = (string) $request->header('svix-timestamp', '');
+        $signatures = (string) $request->header('svix-signature', '');
+
+        if ($id === '' || $timestamp === '' || $signatures === '') {
+            return self::MISSING_SIGNATURE;
+        }
+
+        // Reject stale deliveries so a captured request cannot be replayed later.
+        if (! ctype_digit($timestamp) || abs(time() - (int) $timestamp) > self::SVIX_TOLERANCE_SECONDS) {
+            return self::INVALID;
+        }
+
+        $key = base64_decode(str_starts_with($secret, 'whsec_') ? substr($secret, 6) : $secret, true);
+        if ($key === false || $key === '') {
+            return self::NOT_CONFIGURED;
+        }
+
+        $expected = base64_encode(hash_hmac('sha256', $id.'.'.$timestamp.'.'.$request->getContent(), $key, true));
+
+        foreach (preg_split('/\s+/', trim($signatures)) ?: [] as $candidate) {
+            if (! str_starts_with($candidate, 'v1,')) {
+                continue;
+            }
+            if (hash_equals($expected, substr($candidate, 3))) {
+                return self::VALID;
+            }
+        }
+
+        return self::INVALID;
     }
 
     /** Postmark-style inbound: HTTP Basic credentials on the webhook URL. */

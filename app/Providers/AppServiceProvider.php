@@ -7,6 +7,7 @@ use App\Contracts\InstagramProviderInterface;
 use App\Contracts\PaymentProviderInterface;
 use App\Contracts\PayoutProviderInterface;
 use App\Contracts\PushProviderInterface;
+use App\Services\Integrations\Email\ResendEmailProvider;
 use App\Services\Integrations\Email\SendGridEmailProvider;
 use App\Services\Integrations\Email\SmtpEmailProvider;
 use App\Services\Integrations\Instagram\MetaInstagramProvider;
@@ -44,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
             'razorpayx' => RazorpayXPayoutProvider::class,
         ],
         EmailProviderInterface::class => [
+            'resend' => ResendEmailProvider::class,
             'sendgrid' => SendGridEmailProvider::class,
             'smtp' => SmtpEmailProvider::class,
             'ses' => SmtpEmailProvider::class,

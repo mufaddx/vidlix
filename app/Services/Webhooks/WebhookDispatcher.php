@@ -81,6 +81,8 @@ class WebhookDispatcher
         }
 
         return filled($first['event'] ?? null)
+            // Resend namespaces its delivery events; inbound mail does not match.
+            || str_starts_with((string) ($first['type'] ?? ''), 'email.')
             || in_array($first['RecordType'] ?? null, ['Delivery', 'Bounce', 'SpamComplaint'], true);
     }
 }

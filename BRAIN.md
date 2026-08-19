@@ -89,9 +89,9 @@ half-working integration.
 
 | Slot | Driver | Live keys? | Webhook |
 | --- | --- | --- | --- |
-| Payments | `razorpay` | test keys only | `POST /webhooks/payment` |
+| Payments | `razorpay` | **test keys live on server**; webhook secret still missing | `POST /webhooks/payment` |
 | Payouts | `razorpayx` | not set up | `POST /webhooks/payout` |
-| Email | `sendgrid`/`smtp`/`ses`/`postmark` | none | `/webhooks/email/inbound`, `/webhooks/email/events` |
+| Email | **`resend`** (chosen) /`sendgrid`/`smtp`/`ses`/`postmark` | key issued | `/webhooks/email/inbound`, `/webhooks/email/events` |
 | Instagram | `meta` | none | `GET+POST /webhooks/meta` |
 | Storage | S3-compatible | none (local disk) | — |
 | Push | `fcm` | none | — |
@@ -150,6 +150,10 @@ fail `pint --test` (pre-existing, untouched).
   background — invisible. Enforced by `ThemeAndButtonContrastTest`.
 - The dark palette is written twice (media query + `[data-theme="dark"]`) because
   CSS cannot share a block between them. A test asserts the two stay in sync.
+- Resend signs webhooks with **Svix**, not a plain HMAC: the signed content is
+  `{svix-id}.{svix-timestamp}.{raw body}`, HMAC-SHA256 with the base64-decoded
+  `whsec_` secret, base64 encoded, and the header may hold several
+  space-separated `v1,<sig>` values. A 5-minute timestamp window rejects replays.
 - Rejected webhooks are logged under a throwaway id so a forged event cannot
   occupy the unique `provider_event_id` slot and suppress the genuine delivery.
 
