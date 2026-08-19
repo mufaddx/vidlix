@@ -14,8 +14,8 @@
   --line-strong: #39404e;
   --ink: #ffffff;
   --muted: #8f9cae;
-  --accent: #3b82f6;
-  --accent-soft: rgba(59, 130, 246, 0.14);
+  --accent: #5b5ce2;
+  --accent-soft: rgba(91, 92, 226, 0.16);
   --accent-ink: #ffffff;
   --ok: #34d399;
   --danger: #f87171;
@@ -53,7 +53,7 @@ a:hover { text-decoration: underline; }
   /* One soft light source, top-centre. Enough depth to lift the card off the
      background without becoming decoration. */
   background:
-    radial-gradient(900px 420px at 50% -12%, rgba(59, 130, 246, 0.10), transparent 70%),
+    radial-gradient(900px 420px at 50% -12%, rgba(91, 92, 226, 0.12), transparent 70%),
     var(--bg);
 }
 
@@ -218,7 +218,7 @@ a:hover { text-decoration: underline; }
   padding: 11px 14px; border-radius: var(--radius);
   font-size: 13.5px; margin-bottom: 18px; border: 1px solid;
 }
-.notice.info { background: var(--accent-soft); border-color: rgba(59, 130, 246, 0.3); color: #bfd4f7; }
+.notice.info { background: var(--accent-soft); border-color: rgba(91, 92, 226, 0.34); color: #c9caf9; }
 .notice.ok { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.3); color: #9df0cd; }
 .notice.bad { background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.32); color: #fca9a9; }
 .notice[hidden] { display: none; }
@@ -280,7 +280,7 @@ a:hover { text-decoration: underline; }
   transform-origin: 50% 50%;
   animation: orbitSpin 1.15s linear infinite;
 }
-.orbit-arc.slow { stroke: rgba(59, 130, 246, 0.45); animation-duration: 1.9s; animation-direction: reverse; }
+.orbit-arc.slow { stroke: rgba(91, 92, 226, 0.48); animation-duration: 1.9s; animation-direction: reverse; }
 .orbit-hub { fill: var(--accent); transform-origin: 50% 50%; animation: hubPulse 1.15s ease-in-out infinite; }
 .orbit-moon { fill: var(--accent); transform-origin: 50% 50%; animation: orbitSpin 1.15s linear infinite; }
 
@@ -327,7 +327,7 @@ a:hover { text-decoration: underline; }
 .modal-head { padding: 22px 24px 14px; border-bottom: 1px solid var(--line); }
 .modal-head h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
 .modal-head p { margin: 5px 0 0; color: var(--muted); font-size: 13.5px; }
-.modal-role { display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent-soft); color: #a9c8f7; }
+.modal-role { display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent-soft); color: #b6b7f6; }
 
 .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
 .term { margin-bottom: 18px; }

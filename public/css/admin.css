@@ -1,29 +1,33 @@
 /* ---------------------------------------------------------------------------
    Admin panel.
 
-   Deliberately not the marketplace theme. This is an internal tool: plain
-   white, one neutral accent, a system font stack, and no decoration that does
-   not carry information. Staff read dense tables here all day; warmth and
-   personality belong on the public site, not on this screen.
+   Still an internal tool: plain white, dense, no decoration that does not
+   carry information. Staff read tables here all day.
+
+   What changed is that it now shares the product's accent and typeface rather
+   than inventing its own. A neutral near-black accent made every action look
+   equally weighty; the indigo marks the one primary action per screen and
+   leaves everything else quiet.
 --------------------------------------------------------------------------- */
 :root {
   --a-bg: #ffffff;
   --a-panel: #ffffff;
-  --a-sunken: #f7f7f8;
-  --a-ink: #14161a;
+  --a-sunken: #f7f8fb;
+  --a-ink: #14161c;
   --a-muted: #6b7280;
-  --a-line: #e4e6ea;
-  --a-line-strong: #d3d6db;
-  --a-accent: #1a1d23;
+  --a-line: #e3e6ee;
+  --a-line-strong: #d2d6e0;
+  --a-accent: #5b5ce2;
   --a-accent-ink: #ffffff;
-  --a-ok: #146c43;
-  --a-ok-bg: #eaf6ef;
+  --a-accent-soft: #eeeefd;
+  --a-ok: #0a7350;
+  --a-ok-bg: #e8f7f0;
   --a-warn: #8a5a00;
   --a-warn-bg: #fdf5e6;
   --a-danger: #b02a2a;
   --a-danger-bg: #fdeeee;
   --a-radius: 8px;
-  --a-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --a-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 * { box-sizing: border-box; }

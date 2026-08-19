@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $conversation->subject)
+@section('title', $conversation->subject ?: __('Conversation'))
 @section('content')
 <p><a href="{{ route('inbox') }}">{{ __('Back') }}</a></p>
 <h1>{{ $conversation->subject }}</h1>

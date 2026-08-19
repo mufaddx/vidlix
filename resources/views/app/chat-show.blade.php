@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $conversation->subject)
+@section('title', $conversation->subject ?: __('Conversation'))
 @section('content')
 <h1>{{ $conversation->subject }}</h1>
 @foreach($conversation->messages as $m)
