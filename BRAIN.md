@@ -173,9 +173,9 @@ cd ~/vidlix && git pull origin main
 /opt/alt/php84/usr/bin/php artisan config:cache
 /opt/alt/php84/usr/bin/php artisan view:cache
 
-# Cron entries still to add in hPanel (every minute)
-cd ~/vidlix && /opt/alt/php84/usr/bin/php artisan queue:work --stop-when-empty --max-time=55 --tries=3
-cd ~/vidlix && /opt/alt/php84/usr/bin/php artisan schedule:run
+# ONE cron entry, every minute. The queue drain lives in routes/console.php,
+# so schedule:run covers both. Absolute path: cron does not expand ~.
+/opt/alt/php84/usr/bin/php /home/u324559756/vidlix/artisan schedule:run >/dev/null 2>&1
 ```
 
 Local admin: `admin@vidlix.test` / `ChangeMe_Admin1`.

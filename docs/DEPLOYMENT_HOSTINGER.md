@@ -102,9 +102,12 @@ stopwaitsecs=3600
 Hostinger shared plans have no process manager, so run a short-lived worker from
 cron instead. It drains whatever is waiting and exits before the next minute:
 
+The queue drain is registered in `routes/console.php`, so the host needs exactly
+**one** cron entry. Invoke artisan by absolute path — cron does not expand `~`
+and does not start in the app directory:
+
 ```
-* * * * * cd /home/USER/vidlix && php artisan queue:work --stop-when-empty --max-time=55 --tries=3 >> /dev/null 2>&1
-* * * * * cd /home/USER/vidlix && php artisan schedule:run >> /dev/null 2>&1
+* * * * * /opt/alt/php84/usr/bin/php /home/USER/vidlix/artisan schedule:run >/dev/null 2>&1
 ```
 
 `--max-time=55` keeps a slow job from overlapping the next tick, and
