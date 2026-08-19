@@ -5,6 +5,7 @@ namespace App\Services\Email;
 use App\Models\Conversation;
 use App\Models\InboundEmailEvent;
 use App\Models\Message;
+use App\Services\Support\HelpDesk;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -49,6 +50,23 @@ class InboundEmailIngestor
             }
 
             if (! $conversation) {
+                // Mail addressed to the help desk with no token is a first
+                // contact, not a misrouted reply — open a ticket rather than
+                // parking it in the unmatched queue.
+                if ($this->addressedToHelpDesk($mail) && filled($mail['from_email'] ?? null)) {
+                    $thread = app(HelpDesk::class)->openFromEmail($mail);
+                    $event->update([
+                        'conversation_id' => $thread->conversation_id,
+                        'match_status' => 'help_desk',
+                    ]);
+
+                    return [
+                        'status' => 'help_desk',
+                        'conversation_id' => $thread->conversation_id,
+                        'detail' => 'Opened help desk thread '.$thread->reference.'.',
+                    ];
+                }
+
                 return [
                     'status' => 'unmatched',
                     'conversation_id' => null,
@@ -73,5 +91,23 @@ class InboundEmailIngestor
                 'detail' => 'Inbound mail stored on its conversation.',
             ];
         });
+    }
+
+    /** True when one of the recipients is literally the help desk mailbox. */
+    private function addressedToHelpDesk(array $mail): bool
+    {
+        $prefix = strtolower((string) config('vidlix.email.support_prefix', 'help'));
+        $domain = strtolower((string) config('vidlix.email.inbound_domain'));
+        if ($domain === '') {
+            return false;
+        }
+
+        foreach ($mail['recipients'] ?? [] as $address) {
+            if (strtolower($address) === $prefix.'@'.$domain) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -7,6 +7,7 @@ use App\Contracts\InstagramProviderInterface;
 use App\Contracts\PaymentProviderInterface;
 use App\Contracts\PayoutProviderInterface;
 use App\Contracts\PushProviderInterface;
+use App\Models\User;
 use App\Services\Integrations\Email\ResendEmailProvider;
 use App\Services\Integrations\Email\SendGridEmailProvider;
 use App\Services\Integrations\Email\SmtpEmailProvider;
@@ -19,11 +20,13 @@ use App\Services\Integrations\UnconfiguredInstagramProvider;
 use App\Services\Integrations\UnconfiguredPaymentProvider;
 use App\Services\Integrations\UnconfiguredPayoutProvider;
 use App\Services\Integrations\UnconfiguredPushProvider;
+use App\Support\Ability;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -99,6 +102,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        /*
+         | One gate per ability, so every admin route names exactly what it
+         | needs. Previously a single "admin" middleware accepted six role slugs
+         | and opened everything behind it, which meant whoever could edit CMS
+         | copy could also approve a real bank transfer.
+         */
+        foreach (Ability::all() as $ability) {
+            Gate::define($ability, fn (User $user) => $user->hasAbility($ability));
+        }
+
         Event::listen(Registered::class, SendEmailVerificationNotification::class);
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by($request->ip().'|'.$request->input('login')));
         RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));

@@ -76,6 +76,8 @@ return [
         // Transactional mail only (sign-in codes, confirmations). Never used for
         // a person-to-person thread, which must have a real Reply-To.
         'system_prefix' => env('EMAIL_SYSTEM_PREFIX', 'noreply'),
+        // The help desk. Unlike noreply, replies here are read and routed back.
+        'support_prefix' => env('EMAIL_SUPPORT_PREFIX', 'help'),
         'webhook_username' => env('EMAIL_WEBHOOK_USERNAME'),
         'webhook_password' => env('EMAIL_WEBHOOK_PASSWORD'),
         'verification_key' => env('EMAIL_WEBHOOK_PUBLIC_KEY'),

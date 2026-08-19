@@ -128,6 +128,7 @@ class InboundEmailNormalizer
         // so any of those mailboxes may carry a routing token back.
         $prefixes = array_filter([
             strtolower((string) config('vidlix.email.reply_prefix', 'reply')),
+            strtolower((string) config('vidlix.email.support_prefix', 'help')),
             'creator',
             'editor',
         ]);

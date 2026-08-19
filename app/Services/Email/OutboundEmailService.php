@@ -50,7 +50,7 @@ class OutboundEmailService
 
         // creator@domain / editor@domain when the inbound domain is set up;
         // otherwise the single configured sender.
-        $fromAddress = $domain !== '' && $scope !== 'reply'
+        $fromAddress = $domain !== '' && $scope !== (string) config('vidlix.email.reply_prefix', 'reply')
             ? $scope.'@'.$domain
             : $fallback;
 
@@ -61,9 +61,13 @@ class OutboundEmailService
         );
     }
 
-    /** creator | editor, falling back to the neutral reply prefix. */
+    /** creator | editor | help, falling back to the neutral reply prefix. */
     private function prefixFor(Conversation $conversation): string
     {
+        if ($conversation->channel === 'support' || $conversation->owner_scope === 'support') {
+            return (string) config('vidlix.email.support_prefix', 'help');
+        }
+
         $scope = $conversation->owner_scope;
         if ($scope === 'creator' || $scope === 'editor') {
             return $scope;
@@ -78,6 +82,11 @@ class OutboundEmailService
     private function displayNameFor(Conversation $conversation): string
     {
         $suffix = (string) config('vidlix.email.from_name', 'Vidlix');
+
+        if ($conversation->channel === 'support' || $conversation->owner_scope === 'support') {
+            return $suffix.' Support';
+        }
+
         $profile = $conversation->creatorProfile;
 
         if ($profile === null && $conversation->owner_user_id) {

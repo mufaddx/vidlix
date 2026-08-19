@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminEmployeeController;
+use App\Http\Controllers\Admin\AdminHelpDeskController;
+use App\Http\Controllers\Admin\AdminManagerController;
 use App\Http\Controllers\Admin\AdminOpsController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DiscoveryController;
@@ -124,7 +127,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/instagram/connect', [InstagramController::class, 'connect'])->name('app.instagram.connect');
         Route::post('/instagram/sync', [InstagramController::class, 'sync'])->name('app.instagram.sync');
         Route::get('/project-files/{file}', [ProjectFileController::class, 'download'])->name('app.project-files.download');
-        Route::get('/disputes', [WorkspaceController::class, 'disputes'])->name('app.disputes');
+        Route::get('/disputes', [WorkspaceController::class, 'disputes'])->name('app.disputes')->middleware('can:disputes.resolve');
         Route::post('/disputes', [WorkspaceController::class, 'storeDispute'])->name('app.disputes.store');
         Route::get('/support', [WorkspaceController::class, 'tickets'])->name('app.tickets');
         Route::post('/support', [WorkspaceController::class, 'storeTicket'])->name('app.tickets.store');
@@ -140,17 +143,33 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
-        Route::get('/cms', [AdminDashboardController::class, 'cms'])->name('cms');
-        Route::post('/cms/sections/{section}', [AdminDashboardController::class, 'updateSection'])->name('cms.section');
-        Route::get('/users', [AdminOpsController::class, 'users'])->name('users');
-        Route::get('/verification', [AdminOpsController::class, 'verification'])->name('verification');
-        Route::post('/editors/{editor}', [AdminOpsController::class, 'decideEditor'])->name('editors.decide');
-        Route::post('/brands/{brand}', [AdminOpsController::class, 'decideBrand'])->name('brands.decide');
-        Route::post('/campaigns/{campaign}', [AdminOpsController::class, 'decideCampaign'])->name('campaigns.decide');
-        Route::get('/finance', [AdminOpsController::class, 'finance'])->name('finance');
-        Route::post('/withdrawals/{withdrawal}', [AdminOpsController::class, 'withdrawal'])->name('withdrawals.update');
-        Route::get('/disputes', [AdminOpsController::class, 'disputes'])->name('disputes');
-        Route::post('/disputes/{dispute}', [AdminOpsController::class, 'resolveDispute'])->name('disputes.resolve');
-        Route::get('/tickets', [AdminOpsController::class, 'tickets'])->name('tickets');
+        Route::get('/cms', [AdminDashboardController::class, 'cms'])->name('cms')->middleware('can:cms.manage');
+        Route::post('/cms/sections/{section}', [AdminDashboardController::class, 'updateSection'])->name('cms.section')->middleware('can:cms.manage');
+        Route::get('/users', [AdminOpsController::class, 'users'])->name('users')->middleware('can:users.view');
+        Route::get('/verification', [AdminOpsController::class, 'verification'])->name('verification')->middleware('can:verification.decide');
+        Route::post('/editors/{editor}', [AdminOpsController::class, 'decideEditor'])->name('editors.decide')->middleware('can:verification.decide');
+        Route::post('/brands/{brand}', [AdminOpsController::class, 'decideBrand'])->name('brands.decide')->middleware('can:verification.decide');
+        Route::post('/campaigns/{campaign}', [AdminOpsController::class, 'decideCampaign'])->name('campaigns.decide')->middleware('can:verification.decide');
+        Route::get('/finance', [AdminOpsController::class, 'finance'])->name('finance')->middleware('can:finance.view');
+        Route::post('/withdrawals/{withdrawal}', [AdminOpsController::class, 'withdrawal'])->name('withdrawals.update')->middleware('can:finance.approve_payouts');
+        Route::get('/disputes', [AdminOpsController::class, 'disputes'])->name('disputes')->middleware('can:disputes.resolve');
+        Route::post('/disputes/{dispute}', [AdminOpsController::class, 'resolveDispute'])->name('disputes.resolve')->middleware('can:disputes.resolve');
+        Route::get('/tickets', [AdminOpsController::class, 'tickets'])->name('tickets')->middleware('can:support.view');
+
+        // Help desk — help@<domain> and in-app tickets land here.
+        Route::get('/help-desk', [AdminHelpDeskController::class, 'index'])->name('help-desk')->middleware('can:support.view');
+        Route::get('/help-desk/{thread}', [AdminHelpDeskController::class, 'show'])->name('help-desk.show')->middleware('can:support.view');
+        Route::post('/help-desk/{thread}/reply', [AdminHelpDeskController::class, 'reply'])->name('help-desk.reply')->middleware('can:support.reply');
+        Route::post('/help-desk/{thread}/close', [AdminHelpDeskController::class, 'close'])->name('help-desk.close')->middleware('can:support.reply');
+
+        // Who manages whom, including managers Vidlix provided.
+        Route::get('/managers', [AdminManagerController::class, 'index'])->name('managers')->middleware('can:managers.view');
+        Route::post('/managers/assign', [AdminManagerController::class, 'assign'])->name('managers.assign')->middleware('can:managers.assign');
+
+        // Staff accounts. Granting abilities is itself gated.
+        Route::get('/employees', [AdminEmployeeController::class, 'index'])->name('employees')->middleware('can:employees.manage');
+        Route::post('/employees', [AdminEmployeeController::class, 'store'])->name('employees.store')->middleware('can:employees.manage');
+        Route::post('/employees/{employee}/abilities', [AdminEmployeeController::class, 'updateAbilities'])->name('employees.abilities')->middleware('can:employees.manage');
+        Route::post('/employees/{employee}/status', [AdminEmployeeController::class, 'updateStatus'])->name('employees.status')->middleware('can:employees.manage');
     });
 });

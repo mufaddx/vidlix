@@ -27,6 +27,7 @@ use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
 use App\Services\Managers\ManagerDirectory;
 use App\Services\Marketplace\MarketplaceEngine;
+use App\Services\Support\HelpDesk;
 use App\Services\Workspace\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -435,15 +436,31 @@ class WorkspaceController extends Controller
         return view('app.tickets', compact('items'));
     }
 
-    public function storeTicket(Request $request): RedirectResponse
+    public function storeTicket(Request $request, HelpDesk $desk): RedirectResponse
     {
-        SupportTicket::query()->create($request->validate([
+        $data = $request->validate([
             'category' => ['required', 'string', 'max:64'],
             'subject' => ['required', 'string', 'max:160'],
             'body' => ['required', 'string'],
-        ]) + ['user_id' => $request->user()->id, 'priority' => 'normal', 'status' => 'open']);
+        ]);
 
-        return back()->with('status', __('Ticket opened.'));
+        // Kept for the member's own ticket list, and mirrored into the help desk
+        // so staff answer everything from one place regardless of how it arrived.
+        SupportTicket::query()->create($data + [
+            'user_id' => $request->user()->id,
+            'priority' => 'normal',
+            'status' => 'open',
+        ]);
+
+        $thread = $desk->openFromMember(
+            $request->user(),
+            '['.$data['category'].'] '.$data['subject'],
+            $data['body'],
+        );
+
+        return back()->with('status', __('Ticket :ref opened. We reply to this thread and by email.', [
+            'ref' => $thread->reference,
+        ]));
     }
 
     public function notifications(): View

@@ -90,6 +90,32 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(ManagerAssignment::class, 'owner_user_id');
     }
 
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
+    }
+
+    /** A super admin holds every ability implicitly; everyone else is granted them one by one. */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    public function hasAbility(string $ability): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        return (bool) $this->employee?->can($ability);
+    }
+
+    /** True for anyone who should see the admin panel at all. */
+    public function isStaff(): bool
+    {
+        return $this->isSuperAdmin() || $this->employee()->where('status', 'active')->exists();
+    }
+
     public function ledgerAccounts(): HasMany
     {
         return $this->hasMany(LedgerAccount::class);

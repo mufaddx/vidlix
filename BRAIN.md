@@ -59,6 +59,7 @@ app/
     Webhooks/           WebhookProcessor, SignatureVerifier, WebhookDispatcher
     Managers/           ManagerDirectory          ← appointing / activating managers
     Taxonomy/           CategoryService           ← creator/editor/brand categories
+    Support/            HelpDesk                  ← help@ inbox, answered from admin
     Workspace/          WorkspaceContext          ← who you are acting as
     Marketplace/        MarketplaceEngine         ← the big domain service
     Marketplace/        CreatorDiscovery          ← brand-side creator search
@@ -86,6 +87,7 @@ half-working integration.
 | `app/Services/Webhooks/SignatureVerifier.php` | Per-provider signature schemes |
 | `app/Services/Workspace/WorkspaceContext.php` | Account switcher + manager authorisation |
 | `app/Services/Managers/ManagerDirectory.php` | Manager invite / activate / revoke |
+| `app/Support/Ability.php` | Every admin ability, grouped, with plain descriptions |
 | `config/vidlix.php` | Every provider/token setting |
 | `routes/web.php`, `routes/api.php` | Full route surface |
 | `public/css/app.css` | Entire design system, tokenised, light+dark |
@@ -124,8 +126,8 @@ Hostinger with MySQL + SSL.
   is admin/manual.
 - Admin UI to approve pending categories does not exist yet; use
   `CategoryService::approve()` from tinker.
-- Admin UI to assign a company-provided manager does not exist;
-  `ManagerDirectory::invite(..., source: 'company')` does it.
+- `support_tickets` is now only the member's own list; staff answer via
+  `support_threads`. The two are written together and could be merged later.
 
 ---
 
@@ -133,7 +135,6 @@ Hostinger with MySQL + SSL.
 
 | Issue | Severity | Note |
 | --- | --- | --- |
-| Coarse admin gate | High | `EnsureAdmin` lets any of 6 roles reach every admin route, including payout approval. `permissions` table exists but is never checked. |
 | Sanctum tokens never expire, no abilities | Medium | `config/sanctum.php` `expiration => null`; `createToken('api')` grants `*`. |
 | `SESSION_SECURE_COOKIE` unset in production | Medium | Session cookie lacks the `Secure` flag on an HTTPS site. |
 | No throttle on authenticated POST routes | Low | Only login/register/public-form/api/webhooks are throttled. |
@@ -192,6 +193,17 @@ fail `pint --test` (pre-existing, untouched).
 - Editor enquiries use `PublicEnquiryService` (one fixed form); creators keep
   `PublicInquiryService` because their page has a versioned form builder whose
   answers must be stored against the version that produced them.
+- **Admin access is per-ability, not per-role.** `EnsureAdmin` only answers
+  "are you staff"; each route carries `can:<ability>`. A super admin holds every
+  ability implicitly; employees are granted them one at a time in
+  `employee_abilities`. Suspending an employee keeps the grants on file but
+  makes every one of them fail. `employees.manage` cannot be granted to an
+  ordinary employee — only the super admin role has it.
+- Three sender identities, and they cannot be confused: `creator@`/`editor@` for
+  person-to-person threads (real Reply-To), `help@` for the help desk (replies
+  are read and routed back), `noreply@` for transactional mail only. Mail to
+  `help@` with no routing token opens a ticket rather than landing in the
+  unmatched queue.
 - Rejected webhooks are logged under a throwaway id so a forged event cannot
   occupy the unique `provider_event_id` slot and suppress the genuine delivery.
 

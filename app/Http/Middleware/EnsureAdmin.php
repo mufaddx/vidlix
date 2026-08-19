@@ -10,9 +10,13 @@ class EnsureAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
+        /*
+         | Getting through this door only means "you are staff". What you may
+         | actually do is decided per route by a `can:` gate, so being able to
+         | reach the admin panel grants nothing on its own.
+         */
         $user = $request->user();
-        $allowed = ['super_admin', 'operations', 'verification', 'finance', 'support', 'content'];
-        if ($user === null || empty(array_intersect($user->roleSlugs(), $allowed))) {
+        if ($user === null || ! $user->isStaff()) {
             abort(403);
         }
 
