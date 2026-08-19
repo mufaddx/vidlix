@@ -26,22 +26,25 @@
             <small>{{ __('Admin panel') }}</small>
         </a>
 
-        <div class="a-sections">
+        <nav class="a-sections" aria-label="{{ __('Admin sections') }}">
             @foreach($sections as $key => $section)
-                <a class="a-section-link {{ $current === $key ? 'is-active' : '' }}"
-                   href="{{ route($section['items'][0]['route']) }}?section={{ $key }}">{{ $section['label'] }}</a>
-            @endforeach
-        </div>
+                <div class="a-section">
+                    <a class="a-section-link {{ $current === $key ? 'is-active' : '' }}"
+                       href="{{ route($section['items'][0]['route']) }}?section={{ $key }}">{{ $section['label'] }}</a>
 
-        @if(isset($sections[$current]))
-            <p class="a-group-label">{{ $sections[$current]['label'] }}</p>
-            <nav class="a-nav">
-                @foreach($sections[$current]['items'] as $item)
-                    <a class="{{ request()->routeIs($item['route']) ? 'is-active' : '' }}"
-                       href="{{ route($item['route']) }}?section={{ $current }}">{{ $item['label'] }}</a>
-                @endforeach
-            </nav>
-        @endif
+                    {{-- The section's pages open directly beneath it, so what you
+                         clicked and what it contains stay together. --}}
+                    @if($current === $key)
+                        <div class="a-nav">
+                            @foreach($section['items'] as $item)
+                                <a class="{{ request()->routeIs($item['route']) ? 'is-active' : '' }}"
+                                   href="{{ route($item['route']) }}?section={{ $key }}">{{ $item['label'] }}</a>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </nav>
 
         <div class="a-side-foot">
             {{ $user->name }}<br>

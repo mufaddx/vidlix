@@ -27,6 +27,8 @@ final class Ability
 
     public const USERS_VIEW = 'users.view';
 
+    public const USERS_MANAGE = 'users.manage';
+
     public const CATEGORIES_APPROVE = 'categories.approve';
 
     public const MANAGERS_ASSIGN = 'managers.assign';
@@ -64,7 +66,8 @@ final class Ability
                 self::CMS_MANAGE => 'Edit website copy and pages',
             ],
             'Members' => [
-                self::USERS_VIEW => 'Browse member accounts',
+                self::USERS_VIEW => 'Browse member accounts and open their full profile',
+                self::USERS_MANAGE => 'Suspend or restore an account, and take a public page down',
                 self::MANAGERS_VIEW => 'See who manages whom',
                 self::MANAGERS_ASSIGN => 'Assign a manager to a member on the company\'s behalf',
             ],

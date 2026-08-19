@@ -9,10 +9,12 @@ use App\Models\SupportThread;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Creator\CreatorOnboardingService;
+use App\Services\Ledger\LedgerService;
 use App\Services\Support\HelpDesk;
 use App\Support\Ability;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -388,6 +390,101 @@ class AdminPanelTest extends TestCase
             // No ability for these, so they are not rendered at all.
             ->assertDontSee('All influencers', false)
             ->assertDontSee('Employees', false);
+    }
+
+    public function test_the_member_profile_gathers_everything_on_one_page(): void
+    {
+        $admin = $this->superAdmin();
+        $member = User::factory()->create(['name' => 'Full Profile', 'email_verified_at' => now()]);
+        $member->roles()->attach(Role::query()->where('slug', 'creator')->first());
+        app(CreatorOnboardingService::class)->provision($member->id, $member->name);
+        $member->fresh()->creatorProfile->update(['follower_count' => 42000, 'visibility' => 'public']);
+
+        app(LedgerService::class)->append(
+            $member->id, 'earnings', LedgerService::STATE_AVAILABLE, 250000, 'INR'
+        );
+
+        $this->actingAs($admin)->get(route('admin.members.show', $member))
+            ->assertOk()
+            ->assertSee('Full Profile', false)
+            ->assertSee('42,000', false)          // reach
+            ->assertSee('2,500.00', false)        // money, from the ledger
+            ->assertSee('Influencer profile', false)
+            ->assertSee('Conversations', false)
+            ->assertSee('Management', false)
+            ->assertSee('Recent activity', false)
+            ->assertSee('Suspend this account', false);
+    }
+
+    public function test_a_member_with_no_synced_reach_is_not_shown_as_zero(): void
+    {
+        $admin = $this->superAdmin();
+        $member = User::factory()->create();
+        $member->roles()->attach(Role::query()->where('slug', 'creator')->first());
+        app(CreatorOnboardingService::class)->provision($member->id, $member->name);
+
+        $this->actingAs($admin)->get(route('admin.members.show', $member))
+            ->assertOk()
+            ->assertSee('Not synced', false);
+    }
+
+    public function test_suspending_an_account_stops_them_signing_in(): void
+    {
+        $admin = $this->superAdmin();
+        $member = User::factory()->create(['email' => 'tosuspend@test.com', 'password' => 'MemberPass123', 'email_verified_at' => now()]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.members.status', $member), ['status' => 'suspended', 'reason' => 'Spam'])
+            ->assertRedirect();
+
+        $this->assertSame('suspended', $member->fresh()->status);
+
+        // The member login sits behind `guest`, so drop the admin session first.
+        Auth::logout();
+        $this->app['auth']->forgetGuards();
+
+        $this->post('/login', ['login' => 'tosuspend@test.com', 'password' => 'MemberPass123'])
+            ->assertSessionHasErrors('login');
+        $this->assertGuest();
+    }
+
+    public function test_a_super_admin_account_cannot_be_suspended_from_the_panel(): void
+    {
+        $admin = $this->superAdmin();
+        $other = $this->superAdmin();
+
+        $this->actingAs($admin)
+            ->post(route('admin.members.status', $other), ['status' => 'suspended'])
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame('active', $other->fresh()->status);
+    }
+
+    public function test_you_cannot_suspend_your_own_account(): void
+    {
+        $admin = $this->superAdmin();
+        // Not a super admin, so the earlier guard is not what stops this.
+        $staff = $this->employeeWith([Ability::USERS_VIEW, Ability::USERS_MANAGE]);
+
+        $this->actingAs($staff)
+            ->post(route('admin.members.status', $staff), ['status' => 'suspended'])
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame('active', $staff->fresh()->status);
+        $_ = $admin;
+    }
+
+    public function test_viewing_a_member_does_not_grant_suspending_them(): void
+    {
+        $viewer = $this->employeeWith([Ability::USERS_VIEW]);
+        $member = User::factory()->create();
+
+        $this->actingAs($viewer)->get(route('admin.members.show', $member))->assertOk();
+        $this->actingAs($viewer)
+            ->post(route('admin.members.status', $member), ['status' => 'suspended'])
+            ->assertStatus(403);
+
+        $this->assertSame('active', $member->fresh()->status);
     }
 
     public function test_a_company_provided_manager_is_labelled_as_such(): void

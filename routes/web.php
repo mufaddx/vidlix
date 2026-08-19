@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminEmployeeController;
 use App\Http\Controllers\Admin\AdminHelpDeskController;
 use App\Http\Controllers\Admin\AdminManagerController;
+use App\Http\Controllers\Admin\AdminMemberController;
 use App\Http\Controllers\Admin\AdminOpsController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DiscoveryController;
@@ -156,7 +157,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::get('/cms', [AdminDashboardController::class, 'cms'])->name('cms')->middleware('can:cms.manage');
         Route::post('/cms/sections/{section}', [AdminDashboardController::class, 'updateSection'])->name('cms.section')->middleware('can:cms.manage');
-        Route::get('/users', [AdminOpsController::class, 'users'])->name('users')->middleware('can:users.view');
+        // Superseded by the member profile; kept so existing links still work.
+        Route::get('/users', fn () => redirect()->route('admin.members'))->name('users')->middleware('can:users.view');
         Route::get('/verification', [AdminOpsController::class, 'verification'])->name('verification')->middleware('can:verification.decide');
         Route::post('/editors/{editor}', [AdminOpsController::class, 'decideEditor'])->name('editors.decide')->middleware('can:verification.decide');
         Route::post('/brands/{brand}', [AdminOpsController::class, 'decideBrand'])->name('brands.decide')->middleware('can:verification.decide');
@@ -166,6 +168,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/disputes', [AdminOpsController::class, 'disputes'])->name('disputes')->middleware('can:disputes.resolve');
         Route::post('/disputes/{dispute}', [AdminOpsController::class, 'resolveDispute'])->name('disputes.resolve')->middleware('can:disputes.resolve');
         Route::get('/tickets', [AdminOpsController::class, 'tickets'])->name('tickets')->middleware('can:support.view');
+
+        // One member, everything about them, on one page.
+        Route::get('/members', [AdminMemberController::class, 'index'])->name('members')->middleware('can:users.view');
+        Route::get('/members/{user}', [AdminMemberController::class, 'show'])->name('members.show')->middleware('can:users.view');
+        Route::post('/members/{user}/status', [AdminMemberController::class, 'updateStatus'])->name('members.status')->middleware('can:users.manage');
+        Route::post('/members/{user}/visibility', [AdminMemberController::class, 'updateVisibility'])->name('members.visibility')->middleware('can:users.manage');
 
         // Influencers
         Route::get('/influencers', [AdminAudienceController::class, 'influencers'])->name('influencers')->middleware('can:users.view');

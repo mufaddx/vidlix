@@ -44,6 +44,8 @@ a:hover { text-decoration: underline; }
 /* --- Shell --------------------------------------------------------------- */
 .a-shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
 
+/* Stays put while the page scrolls. Losing the navigation the moment you read
+   a long table is the fastest way to lose your place. */
 .a-side {
   border-right: 1px solid var(--a-line);
   background: var(--a-sunken);
@@ -51,6 +53,11 @@ a:hover { text-decoration: underline; }
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .a-brand {
@@ -60,8 +67,11 @@ a:hover { text-decoration: underline; }
 .a-brand:hover { text-decoration: none; }
 .a-brand small { display: block; font-weight: 400; font-size: 11px; color: var(--a-muted); letter-spacing: 0.04em; text-transform: uppercase; }
 
-/* Section switcher: the three audiences plus operations. */
-.a-sections { display: grid; gap: 2px; margin-bottom: 10px; }
+/* One list, not two. A section's pages open directly beneath the section you
+   clicked, so the thing you opened and its contents are never separated by the
+   rest of the menu. */
+.a-sections { display: grid; gap: 2px; }
+.a-section { display: grid; gap: 1px; }
 .a-section-link {
   display: block; padding: 7px 10px; border-radius: var(--a-radius);
   font-weight: 600; font-size: 13px; color: var(--a-muted);
@@ -74,9 +84,9 @@ a:hover { text-decoration: underline; }
   color: var(--a-muted); padding: 12px 10px 5px; margin: 0;
 }
 
-.a-nav { display: grid; gap: 1px; }
+.a-nav { display: grid; gap: 1px; margin: 2px 0 6px; padding-left: 10px; border-left: 2px solid var(--a-line); }
 .a-nav a {
-  display: block; padding: 7px 10px; border-radius: var(--a-radius);
+  display: block; padding: 6px 10px; border-radius: var(--a-radius);
   color: var(--a-ink); font-size: 13px;
 }
 .a-nav a:hover { background: #eeeff1; text-decoration: none; }
@@ -124,6 +134,19 @@ a:hover { text-decoration: underline; }
 .a-table .a-sub { display: block; color: var(--a-muted); font-size: 12px; }
 
 .a-empty { padding: 28px 16px; text-align: center; color: var(--a-muted); font-size: 13px; }
+
+/* Two-column key/value used across the member profile. */
+.a-facts { display: grid; grid-template-columns: 180px 1fr; gap: 0; font-size: 13px; }
+.a-facts dt { padding: 9px 16px; color: var(--a-muted); border-bottom: 1px solid var(--a-line); }
+.a-facts dd { padding: 9px 16px; margin: 0; border-bottom: 1px solid var(--a-line); }
+.a-facts dt:last-of-type, .a-facts dd:last-of-type { border-bottom: 0; }
+
+.a-money { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; }
+.a-money > div { padding: 14px 16px; border-right: 1px solid var(--a-line); }
+.a-money > div:last-child { border-right: 0; }
+
+.a-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.a-back { font-size: 12px; color: var(--a-muted); display: inline-block; margin-bottom: 10px; }
 
 .a-tag {
   display: inline-block; padding: 2px 8px; border-radius: 999px;
@@ -201,7 +224,9 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 860px) {
   .a-shell { grid-template-columns: 1fr; }
-  .a-side { border-right: 0; border-bottom: 1px solid var(--a-line); }
+  .a-side { border-right: 0; border-bottom: 1px solid var(--a-line); position: static; height: auto; }
+  .a-facts { grid-template-columns: 1fr; }
+  .a-facts dt { padding-bottom: 0; border-bottom: 0; }
   .a-head, .a-body { padding-left: 16px; padding-right: 16px; }
   .a-form-row { grid-template-columns: 1fr; }
   .a-msg.out { margin-left: 12px; }

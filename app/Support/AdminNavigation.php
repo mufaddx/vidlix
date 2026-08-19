@@ -28,6 +28,7 @@ final class AdminNavigation
                 'blurb' => 'Creator accounts, their reach and who represents them',
                 'items' => [
                     ['route' => 'admin.influencers', 'label' => 'All influencers', 'ability' => Ability::USERS_VIEW],
+                    ['route' => 'admin.members', 'label' => 'Member accounts', 'ability' => Ability::USERS_VIEW],
                     ['route' => 'admin.influencers.categories', 'label' => 'Categories', 'ability' => Ability::CATEGORIES_APPROVE],
                     ['route' => 'admin.managers', 'label' => 'Managers', 'ability' => Ability::MANAGERS_VIEW],
                 ],
