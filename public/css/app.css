@@ -256,7 +256,25 @@ img { max-width: 100%; }
 .cta-band h2 { font-size: clamp(2rem, 4vw, 3rem); }
 .form { display: grid; gap: 12px; }
 label { font-size: 0.86rem; font-weight: 600; }
-input, textarea, select { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); color: var(--ink); font: inherit; }
+/* Text-like controls only. A checkbox or radio must not be stretched to full
+   width with a 44px min-height — that renders it as a large empty square with
+   its label orphaned underneath. */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 12px; background: var(--surface); color: var(--ink); font: inherit;
+}
+input[type="checkbox"], input[type="radio"] {
+  width: 18px; height: 18px; min-height: 0; margin: 0; padding: 0;
+  accent-color: var(--accent); cursor: pointer; flex: none;
+}
+/* A label wrapping a checkbox becomes the click target, so keep them on one line. */
+label:has(> input[type="checkbox"]),
+label:has(> input[type="radio"]) {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 500; cursor: pointer; min-height: 44px;
+}
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 textarea { min-height: 120px; resize: vertical; }
 /* Category chips: a checkbox that reads as a tag. */

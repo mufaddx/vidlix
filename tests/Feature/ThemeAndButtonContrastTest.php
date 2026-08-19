@@ -120,6 +120,32 @@ class ThemeAndButtonContrastTest extends TestCase
         }
     }
 
+    public function test_checkboxes_are_excluded_from_the_full_width_input_rule(): void
+    {
+        $css = $this->stylesheet();
+
+        // A checkbox caught by `width: 100%; min-height: 44px` renders as a
+        // large empty square with its label orphaned below it — which is
+        // exactly how the login page broke.
+        $this->assertStringNotContainsString(
+            'input, textarea, select {',
+            $css,
+            'The text-input rule must exclude checkboxes and radios.',
+        );
+        $this->assertStringContainsString('input:not([type="checkbox"]):not([type="radio"])', $css);
+
+        $sizing = $this->declarations($css, 'input[type="checkbox"], input[type="radio"]');
+        $this->assertSame('18px', $sizing['width'] ?? null);
+        $this->assertSame('0', $sizing['min-height'] ?? null);
+    }
+
+    public function test_the_login_page_renders_its_remember_checkbox_inline(): void
+    {
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('type="checkbox" name="remember"', false);
+    }
+
     public function test_the_public_site_offers_a_theme_toggle(): void
     {
         $this->get('/')
