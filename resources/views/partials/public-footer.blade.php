@@ -53,7 +53,7 @@
             <h3>{{ __('Workspace') }}</h3>
             <ul>
                 <li><a href="{{ route('dashboard') }}">{{ __('Dashboard') }}</a></li>
-                <li><a href="{{ route('creator.inbox') }}">{{ __('Inbox') }}</a></li>
+                <li><a href="{{ route('inbox') }}">{{ __('Inbox') }}</a></li>
                 <li><a href="{{ route('app.campaigns') }}">{{ __('My campaigns') }}</a></li>
                 <li><a href="{{ route('app.applications') }}">{{ __('Applications') }}</a></li>
                 <li><a href="{{ route('app.projects') }}">{{ __('Projects') }}</a></li>

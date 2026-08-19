@@ -33,6 +33,7 @@ use App\Notifications\GenericNotice;
 use App\Services\Audit\AuditLogger;
 use App\Services\Ledger\LedgerService;
 use App\Services\Media\MediaStorage;
+use App\Services\Messaging\InboxQuery;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -481,8 +482,11 @@ class MarketplaceEngine
             'routing_token' => Str::lower(Str::ulid()),
             'last_message_at' => now(),
         ]);
-        $conversation->participants()->create(['user_id' => $a->id, 'role' => 'member']);
-        $conversation->participants()->create(['user_id' => $b->id, 'role' => 'member']);
+        // The marketplace role is stored per participant so each side's inbox
+        // can filter on what the *other* one is.
+        $inbox = app(InboxQuery::class);
+        $conversation->participants()->create(['user_id' => $a->id, 'role' => 'member', 'marketplace_role' => $inbox->roleFor($a)]);
+        $conversation->participants()->create(['user_id' => $b->id, 'role' => 'member', 'marketplace_role' => $inbox->roleFor($b)]);
 
         return $conversation;
     }

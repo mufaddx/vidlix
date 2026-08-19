@@ -8,7 +8,7 @@
         <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">{{ __('Home') }}</a>
         <a class="{{ request()->routeIs('app.notifications') ? 'active' : '' }}" href="{{ route('app.notifications') }}">{{ __('Notifications') }}</a>
         @if(auth()->user()?->creatorProfile)
-            <a class="{{ request()->routeIs('creator.inbox*') ? 'active' : '' }}" href="{{ route('creator.inbox') }}">{{ __('Inbox') }}</a>
+            <a class="{{ request()->routeIs('inbox*') ? 'active' : '' }}" href="{{ route('inbox') }}">{{ __('Inbox') }}</a>
             <a class="{{ request()->routeIs('creator.public-page') ? 'active' : '' }}" href="{{ route('creator.public-page') }}">{{ __('Public page') }}</a>
             <a href="{{ route('app.instagram') }}">{{ __('Instagram') }}</a>
             <a href="{{ route('app.automations') }}">{{ __('Automation') }}</a>

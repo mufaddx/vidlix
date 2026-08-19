@@ -105,9 +105,13 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('verified')->group(function () {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');
-        Route::get('/creator/inbox', [InboxController::class, 'index'])->name('creator.inbox');
-        Route::get('/creator/inbox/{uuid}', [InboxController::class, 'show'])->name('creator.inbox.show');
-        Route::post('/creator/inbox/{uuid}/reply', [InboxController::class, 'reply'])->name('creator.inbox.reply');
+        // One inbox for every role, so the URL is no longer creator-shaped.
+        // The old paths still resolve because they have been linked and bookmarked.
+        Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
+        Route::get('/inbox/{uuid}', [InboxController::class, 'show'])->name('inbox.show');
+        Route::post('/inbox/{uuid}/reply', [InboxController::class, 'reply'])->name('inbox.reply');
+        Route::redirect('/creator/inbox', '/inbox');
+        Route::get('/creator/inbox/{uuid}', fn (string $uuid) => redirect('/inbox/'.$uuid));
         Route::get('/creator/public-page', [PublicPageStudioController::class, 'edit'])->name('creator.public-page');
         Route::post('/creator/public-page/draft', [PublicPageStudioController::class, 'saveDraft'])->name('creator.public-page.draft');
         Route::post('/creator/public-page/publish', [PublicPageStudioController::class, 'publish'])->name('creator.public-page.publish');

@@ -360,7 +360,7 @@ class AdminPanelTest extends TestCase
             ->assertSee('Admin panel', false)
             // Member navigation must not leak into a staff screen.
             ->assertDontSee(route('app.earnings'), false)
-            ->assertDontSee(route('creator.inbox'), false)
+            ->assertDontSee(route('inbox'), false)
             ->assertDontSee('css/app.css', false);
     }
 

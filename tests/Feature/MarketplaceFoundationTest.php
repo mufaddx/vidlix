@@ -60,7 +60,7 @@ class MarketplaceFoundationTest extends TestCase
         app(CreatorOnboardingService::class)->provision($intruder->id, $intruder->name);
 
         $this->actingAs($intruder)
-            ->get('/creator/inbox/'.$uuid)
+            ->get('/inbox/'.$uuid)
             ->assertNotFound();
     }
 
