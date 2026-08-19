@@ -189,6 +189,42 @@ class ResendEmailTest extends TestCase
         $this->assertDatabaseCount('conversations', 0);
     }
 
+    public function test_a_late_sent_event_cannot_downgrade_a_delivered_message(): void
+    {
+        $this->configureResend();
+        $message = Message::query()->create([
+            'conversation_id' => $this->conversation()->id,
+            'direction' => 'outbound',
+            'body' => 'Happy to help.',
+            'provider_message_id' => 'resend-order-1',
+            'delivery_status' => 'accepted',
+        ]);
+
+        // Observed against the live Resend webhook: email.sent arrived after
+        // email.delivered, and the message was walked backwards to accepted.
+        $this->svixPost(['type' => 'email.delivered', 'data' => ['email_id' => 'resend-order-1']])->assertOk();
+        $this->assertSame('delivered', $message->fresh()->delivery_status);
+
+        $this->svixPost(['type' => 'email.sent', 'data' => ['email_id' => 'resend-order-1']])->assertOk();
+        $this->assertSame('delivered', $message->fresh()->delivery_status);
+    }
+
+    public function test_a_bounce_still_outranks_an_earlier_delivery(): void
+    {
+        $this->configureResend();
+        $message = Message::query()->create([
+            'conversation_id' => $this->conversation()->id,
+            'direction' => 'outbound',
+            'body' => 'Happy to help.',
+            'provider_message_id' => 'resend-order-2',
+            'delivery_status' => 'delivered',
+        ]);
+
+        $this->svixPost(['type' => 'email.bounced', 'data' => ['email_id' => 'resend-order-2']])->assertOk();
+
+        $this->assertSame('bounced', $message->fresh()->delivery_status);
+    }
+
     public function test_a_bounce_is_recorded_from_the_tag_when_the_id_is_unknown(): void
     {
         $this->configureResend();

@@ -12,6 +12,22 @@ use App\Models\Message;
 class DeliveryEventHandler
 {
     /**
+     * Lifecycle precedence. A status may only move to a higher rank, so
+     * out-of-order webhooks cannot walk a message backwards. Bounces and
+     * complaints outrank delivery because they are the outcome that matters.
+     */
+    private const RANK = [
+        'queued' => 0,
+        'provider_not_configured' => 0,
+        'stored' => 0,
+        'accepted' => 1,
+        'deferred' => 2,
+        'delivered' => 3,
+        'bounced' => 4,
+        'complained' => 5,
+    ];
+
+    /**
      * @return array{status: string, handled: int, detail: string}
      */
     public function handle(array $payload): array
@@ -43,8 +59,11 @@ class DeliveryEventHandler
                 'detail' => (string) ($event['reason'] ?? $event['Description'] ?? 'Provider delivery event.'),
             ]);
 
-            // Never downgrade a terminal failure back to delivered.
-            if (! in_array($message->delivery_status, ['bounced', 'complained'], true)) {
+            // Providers do not guarantee ordering — Resend routinely delivers
+            // email.sent *after* email.delivered — so status may only ever move
+            // forward. Without this, a late "sent" event silently downgrades a
+            // message that was already confirmed delivered.
+            if (self::RANK[$status] > (self::RANK[$message->delivery_status] ?? 0)) {
                 $message->forceFill(['delivery_status' => $status])->save();
             }
             $handled++;
