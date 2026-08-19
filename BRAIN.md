@@ -173,9 +173,11 @@ cd ~/vidlix && git pull origin main
 /opt/alt/php84/usr/bin/php artisan config:cache
 /opt/alt/php84/usr/bin/php artisan view:cache
 
-# ONE cron entry, every minute. The queue drain lives in routes/console.php,
-# so schedule:run covers both. Absolute path: cron does not expand ~.
-/opt/alt/php84/usr/bin/php /home/u324559756/vidlix/artisan schedule:run >/dev/null 2>&1
+# This plan has NO cron (no crontab, no spool, no systemd, no at). The
+# scheduler is driven over HTTP instead, every minute, by an external service:
+#   POST https://vidlix.in/api/internal/scheduler/run
+#   Header: X-Cron-Token: <CRON_TOKEN from .env>
+# The queue drain lives in routes/console.php, so schedule:run covers both.
 ```
 
 Local admin: `admin@vidlix.test` / `ChangeMe_Admin1`.

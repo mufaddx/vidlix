@@ -105,5 +105,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('public-form', fn (Request $request) => Limit::perMinute(8)->by($request->ip()));
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
+        // A once-a-minute trigger needs very little headroom.
+        RateLimiter::for('scheduler', fn (Request $request) => Limit::perMinute(6)->by($request->ip()));
     }
 }

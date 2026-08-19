@@ -102,6 +102,36 @@ stopwaitsecs=3600
 Hostinger shared plans have no process manager, so run a short-lived worker from
 cron instead. It drains whatever is waiting and exits before the next minute:
 
+### When the plan has no cron at all
+
+Hostinger's cheaper shared plans expose no crontab, no cron spool, no systemd
+timers and no `at`. Verify before assuming:
+
+```
+command -v crontab; ls /var/spool/cron/crontabs/
+```
+
+If there is genuinely nothing, drive the scheduler over HTTP from an external
+service instead. Set a long random `CRON_TOKEN` in `.env`, then have the service
+call, every minute:
+
+```
+POST https://your-domain/api/internal/scheduler/run
+Header: X-Cron-Token: <CRON_TOKEN>
+```
+
+The endpoint 404s unless the token is configured and matches, is throttled, and
+only accepts the secret from the header — never the query string, which would
+put it in access logs. `schedule:run` backgrounds the queue worker, so the
+request returns immediately.
+
+cron-job.org and EasyCron both do one-minute intervals with custom headers on
+their free tiers. GitHub Actions works too but its scheduled runs have a
+five-minute floor and are frequently delayed, so it suits a fallback more than a
+primary trigger.
+
+### When the plan does have cron
+
 The queue drain is registered in `routes/console.php`, so the host needs exactly
 **one** cron entry. Invoke artisan by absolute path — cron does not expand `~`
 and does not start in the app directory:

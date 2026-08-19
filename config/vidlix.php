@@ -101,6 +101,14 @@ return [
         'timeout' => (int) env('PUSH_HTTP_TIMEOUT', 15),
     ],
 
+    /*
+     | HTTP scheduler trigger, for hosts with no cron (Hostinger shared plans).
+     | Empty token => the route 404s and cannot be used at all.
+     */
+    'cron' => [
+        'token' => env('CRON_TOKEN'),
+    ],
+
     'media' => [
         // Disk used for project files / portfolio media. Never MySQL.
         'disk' => env('MEDIA_DISK') ?: env('FILESYSTEM_DISK', 'local'),

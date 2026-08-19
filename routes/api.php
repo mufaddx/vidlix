@@ -1,9 +1,18 @@
 <?php
 
+use App\Http\Controllers\Api\InternalSchedulerController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\MarketplaceController;
 use App\Http\Controllers\Api\V1\WorkspaceApiController;
 use Illuminate\Support\Facades\Route;
+
+/*
+ | Scheduler trigger for hosts without cron. Deliberately outside /v1: it is not
+ | part of the public API surface. Authenticated by the X-Cron-Token header and
+ | throttled, and it 404s unless CRON_TOKEN is configured.
+ */
+Route::post('internal/scheduler/run', [InternalSchedulerController::class, 'run'])
+    ->middleware('throttle:scheduler');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register']);
