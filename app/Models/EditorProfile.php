@@ -20,7 +20,14 @@ class EditorProfile extends Model
     protected $fillable = [
         'user_id', 'username', 'display_name', 'bio', 'application_status',
         'software', 'specializations', 'starting_price_minor', 'availability',
+        'visibility', 'accepts_inquiries',
     ];
+
+    /** Only an approved, public editor page is reachable by the world. */
+    public function isPublished(): bool
+    {
+        return $this->visibility === 'public' && $this->application_status === 'approved';
+    }
 
     protected function casts(): array
     {

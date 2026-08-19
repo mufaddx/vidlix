@@ -4,6 +4,7 @@ namespace App\Services\Integrations;
 
 use App\Contracts\EmailProviderInterface;
 use App\Models\Message;
+use App\Services\Email\OutboundIdentity;
 
 class UnconfiguredEmailProvider implements EmailProviderInterface
 {
@@ -17,7 +18,7 @@ class UnconfiguredEmailProvider implements EmailProviderInterface
         return 'unconfigured';
     }
 
-    public function sendThreadReply(Message $message, string $toEmail, string $replyTo): array
+    public function sendThreadReply(Message $message, string $toEmail, OutboundIdentity $identity): array
     {
         return [
             'status' => 'provider_not_configured',

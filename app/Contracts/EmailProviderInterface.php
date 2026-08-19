@@ -3,6 +3,7 @@
 namespace App\Contracts;
 
 use App\Models\Message;
+use App\Services\Email\OutboundIdentity;
 
 interface EmailProviderInterface
 {
@@ -16,5 +17,5 @@ interface EmailProviderInterface
      *
      * @return array{status: string, provider_message_id: ?string, detail: string}
      */
-    public function sendThreadReply(Message $message, string $toEmail, string $replyTo): array;
+    public function sendThreadReply(Message $message, string $toEmail, OutboundIdentity $identity): array;
 }

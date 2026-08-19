@@ -17,6 +17,9 @@
         <a class="{{ request()->routeIs('app.roles') ? 'active' : '' }}" href="{{ route('app.roles') }}">{{ __('Roles & categories') }}</a>
         <a href="{{ route('app.editors') }}">{{ __('Editor') }}</a>
         <a href="{{ route('app.brand') }}">{{ __('Brand') }}</a>
+        @if(auth()->user()?->brandProfile)
+            <a class="{{ request()->routeIs('app.discover') ? 'active' : '' }}" href="{{ route('app.discover') }}">{{ __('Find creators') }}</a>
+        @endif
         <a href="{{ route('app.campaigns') }}">{{ __('Campaigns') }}</a>
         <a href="{{ route('app.applications') }}">{{ __('Applications') }}</a>
         <a href="{{ route('app.projects') }}">{{ __('Projects') }}</a>

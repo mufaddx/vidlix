@@ -124,14 +124,21 @@ class InboundEmailNormalizer
             }
         }
 
-        $prefix = strtolower((string) config('vidlix.email.reply_prefix', 'reply'));
+        // Threads leave from creator@ / editor@ as well as the neutral reply@,
+        // so any of those mailboxes may carry a routing token back.
+        $prefixes = array_filter([
+            strtolower((string) config('vidlix.email.reply_prefix', 'reply')),
+            'creator',
+            'editor',
+        ]);
+
         foreach ($recipients as $address) {
             [$local] = array_pad(explode('@', $address, 2), 2, '');
             if (! str_contains($local, '+')) {
                 continue;
             }
             [$mailbox, $token] = explode('+', $local, 2);
-            if ($token !== '' && ($prefix === '' || $mailbox === $prefix)) {
+            if ($token !== '' && in_array($mailbox, $prefixes, true)) {
                 return $token;
             }
         }

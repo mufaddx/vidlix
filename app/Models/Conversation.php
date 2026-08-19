@@ -10,7 +10,8 @@ class Conversation extends Model
 {
     protected $fillable = [
         'conversation_uuid', 'channel', 'subject', 'status',
-        'creator_profile_id', 'external_contact_id', 'routing_token', 'last_message_at',
+        'creator_profile_id', 'owner_user_id', 'owner_scope',
+        'external_contact_id', 'routing_token', 'last_message_at',
     ];
 
     protected function casts(): array

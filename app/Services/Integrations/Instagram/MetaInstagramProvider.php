@@ -205,7 +205,16 @@ class MetaInstagramProvider implements InstagramProviderInterface
             'insights_synced_at' => now(),
             'last_error' => null,
         ]);
-        $profile->update(['instagram_connection_status' => 'connected']);
+
+        $profileUpdate = ['instagram_connection_status' => 'connected'];
+        // Denormalised only so brand search can filter without a Graph call.
+        // Written solely from a live response: if Graph omitted the field the
+        // stored value is left alone rather than reset to zero.
+        if (array_key_exists('followers_count', $insights)) {
+            $profileUpdate['follower_count'] = (int) $insights['followers_count'];
+            $profileUpdate['follower_count_synced_at'] = now();
+        }
+        $profile->update($profileUpdate);
 
         return [
             'status' => 'synced',

@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Email;
 
 use App\Contracts\EmailProviderInterface;
 use App\Models\Message;
+use App\Services\Email\OutboundIdentity;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -26,7 +27,7 @@ class SendGridEmailProvider implements EmailProviderInterface
         return filled(config('vidlix.email.api_key')) && filled(config('vidlix.email.from_address'));
     }
 
-    public function sendThreadReply(Message $message, string $toEmail, string $replyTo): array
+    public function sendThreadReply(Message $message, string $toEmail, OutboundIdentity $identity): array
     {
         if (! $this->isConfigured()) {
             return [
@@ -48,10 +49,10 @@ class SendGridEmailProvider implements EmailProviderInterface
                 ]),
             ]],
             'from' => [
-                'email' => (string) config('vidlix.email.from_address'),
-                'name' => (string) config('vidlix.email.from_name'),
+                'email' => $identity->fromAddress,
+                'name' => $identity->fromName,
             ],
-            'reply_to' => ['email' => $replyTo],
+            'reply_to' => ['email' => $identity->replyTo],
             'subject' => $subject,
             'content' => [['type' => 'text/plain', 'value' => (string) $message->body]],
             'custom_args' => [

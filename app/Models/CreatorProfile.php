@@ -19,11 +19,16 @@ class CreatorProfile extends Model
         'onboarding_step',
         'profile_completion',
         'instagram_connection_status',
+        'follower_count',
+        'follower_count_synced_at',
     ];
 
     protected function casts(): array
     {
-        return ['niches' => 'array'];
+        return [
+            'niches' => 'array',
+            'follower_count_synced_at' => 'datetime',
+        ];
     }
 
     public function user(): BelongsTo

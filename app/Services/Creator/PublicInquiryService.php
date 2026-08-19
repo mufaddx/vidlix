@@ -56,6 +56,8 @@ class PublicInquiryService
                 'subject' => $answers['subject'],
                 'status' => 'open',
                 'creator_profile_id' => $profile->id,
+                'owner_user_id' => $profile->user_id,
+                'owner_scope' => 'creator',
                 'external_contact_id' => $contact->id,
                 'routing_token' => Str::lower(Str::ulid()),
                 'last_message_at' => now(),
@@ -86,7 +88,7 @@ class PublicInquiryService
             $send = $this->email->sendThreadReply(
                 $message,
                 $contact->email,
-                $this->outbound->replyAddressFor($conversation) ?? (string) config('vidlix.email.from_address'),
+                $this->outbound->identityFor($conversation),
             );
 
             EmailEvent::query()->create([

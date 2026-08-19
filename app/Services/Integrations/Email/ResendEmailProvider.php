@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Email;
 
 use App\Contracts\EmailProviderInterface;
 use App\Models\Message;
+use App\Services\Email\OutboundIdentity;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -27,7 +28,7 @@ class ResendEmailProvider implements EmailProviderInterface
         return filled(config('vidlix.email.api_key')) && filled(config('vidlix.email.from_address'));
     }
 
-    public function sendThreadReply(Message $message, string $toEmail, string $replyTo): array
+    public function sendThreadReply(Message $message, string $toEmail, OutboundIdentity $identity): array
     {
         if (! $this->isConfigured()) {
             return [
@@ -38,15 +39,15 @@ class ResendEmailProvider implements EmailProviderInterface
         }
 
         $conversation = $message->conversation;
-        $fromName = (string) config('vidlix.email.from_name');
-        $fromAddress = (string) config('vidlix.email.from_address');
 
         $payload = [
-            'from' => $fromName !== '' ? $fromName.' <'.$fromAddress.'>' : $fromAddress,
+            'from' => $identity->fromName !== ''
+                ? $identity->fromName.' <'.$identity->fromAddress.'>'
+                : $identity->fromAddress,
             'to' => [$toEmail],
             'subject' => filled($conversation?->subject) ? (string) $conversation->subject : 'Vidlix message',
             'text' => (string) $message->body,
-            'reply_to' => [$replyTo],
+            'reply_to' => [$identity->replyTo],
             // Tags survive into the webhook, so a delivery event can be tied back
             // to our own row without depending on the provider id alone.
             'tags' => [

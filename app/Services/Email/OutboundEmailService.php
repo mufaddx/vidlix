@@ -7,6 +7,7 @@ use App\Jobs\SendThreadReplyEmail;
 use App\Models\Conversation;
 use App\Models\EmailEvent;
 use App\Models\Message;
+use App\Models\User;
 
 /**
  * Outbound thread replies.
@@ -19,7 +20,11 @@ class OutboundEmailService
 {
     public function __construct(private EmailProviderInterface $provider) {}
 
-    /** reply+<routing_token>@<inbound_domain>, the address inbound routing depends on. */
+    /**
+     * <prefix>+<routing_token>@<inbound_domain>, the address inbound routing
+     * depends on. The prefix follows the thread's scope, so a creator thread
+     * replies to creator+… and an editor thread to editor+….
+     */
     public function replyAddressFor(Conversation $conversation): ?string
     {
         $domain = (string) config('vidlix.email.inbound_domain');
@@ -27,9 +32,69 @@ class OutboundEmailService
             return null;
         }
 
-        $prefix = (string) config('vidlix.email.reply_prefix', 'reply');
+        return $this->prefixFor($conversation).'+'.$conversation->routing_token.'@'.$domain;
+    }
 
-        return $prefix.'+'.$conversation->routing_token.'@'.$domain;
+    /**
+     * Who the message appears to come from.
+     *
+     * The recipient is a brand who contacted a specific person, so they should
+     * see that person's name and Instagram handle — not a generic address that
+     * tells them nothing about which enquiry this answers.
+     */
+    public function identityFor(Conversation $conversation): OutboundIdentity
+    {
+        $scope = $this->prefixFor($conversation);
+        $domain = (string) config('vidlix.email.inbound_domain');
+        $fallback = (string) config('vidlix.email.from_address');
+
+        // creator@domain / editor@domain when the inbound domain is set up;
+        // otherwise the single configured sender.
+        $fromAddress = $domain !== '' && $scope !== 'reply'
+            ? $scope.'@'.$domain
+            : $fallback;
+
+        return new OutboundIdentity(
+            fromAddress: $fromAddress,
+            fromName: $this->displayNameFor($conversation),
+            replyTo: $this->replyAddressFor($conversation) ?? $fallback,
+        );
+    }
+
+    /** creator | editor, falling back to the neutral reply prefix. */
+    private function prefixFor(Conversation $conversation): string
+    {
+        $scope = $conversation->owner_scope;
+        if ($scope === 'creator' || $scope === 'editor') {
+            return $scope;
+        }
+
+        return $conversation->creator_profile_id
+            ? 'creator'
+            : (string) config('vidlix.email.reply_prefix', 'reply');
+    }
+
+    /** "Mursalim (@mursalim) via Vidlix" — name plus the handle they know. */
+    private function displayNameFor(Conversation $conversation): string
+    {
+        $suffix = (string) config('vidlix.email.from_name', 'Vidlix');
+        $profile = $conversation->creatorProfile;
+
+        if ($profile === null && $conversation->owner_user_id) {
+            $owner = User::query()->find($conversation->owner_user_id);
+            $profile = $conversation->owner_scope === 'editor'
+                ? $owner?->editorProfile
+                : $owner?->creatorProfile;
+        }
+
+        if ($profile === null) {
+            return $suffix;
+        }
+
+        $handle = $profile->instagramAccount?->username ?? $profile->username ?? null;
+        $name = $profile->display_name ?: $suffix;
+
+        return $handle ? $name.' (@'.$handle.') via '.$suffix : $name.' via '.$suffix;
     }
 
     /** Status a freshly stored outbound message should carry before any send is attempted. */
@@ -63,10 +128,11 @@ class OutboundEmailService
             return ['status' => 'no_recipient', 'detail' => 'No external recipient on this conversation.'];
         }
 
-        $replyTo = $this->replyAddressFor($conversation)
-            ?? (string) config('vidlix.email.from_address');
-
-        $result = $this->provider->sendThreadReply($message, (string) $toEmail, $replyTo);
+        $result = $this->provider->sendThreadReply(
+            $message,
+            (string) $toEmail,
+            $this->identityFor($conversation),
+        );
         $this->record($message, $result['status'], $result['provider_message_id'], $result['detail']);
 
         return ['status' => $result['status'], 'detail' => $result['detail']];

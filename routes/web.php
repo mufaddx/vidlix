@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOpsController;
 use App\Http\Controllers\App\DashboardController;
+use App\Http\Controllers\App\DiscoveryController;
 use App\Http\Controllers\App\InboxController;
 use App\Http\Controllers\App\InstagramController;
 use App\Http\Controllers\App\ProjectFileController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Managers\ManagerInvitationController;
 use App\Http\Controllers\Site\CreatorPublicController;
+use App\Http\Controllers\Site\EditorPublicController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Webhooks\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -21,7 +23,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/creators', [HomeController::class, 'creators'])->name('creators.index');
 Route::get('/editors', [HomeController::class, 'editors'])->name('editors.index');
-Route::get('/editors/{username}', [HomeController::class, 'editorShow'])->name('editors.public');
+Route::get('/editors/{username}', [EditorPublicController::class, 'show'])->name('editors.public');
+Route::post('/editors/{username}/enquire', [EditorPublicController::class, 'enquire'])
+    ->middleware('throttle:public-form')
+    ->name('editors.enquire');
 Route::get('/brands', [HomeController::class, 'brands'])->name('brands.index');
 Route::get('/brands/{slug}', [HomeController::class, 'brandShow'])->name('brands.public');
 Route::get('/campaigns', [HomeController::class, 'campaigns'])->name('campaigns.index');
@@ -84,6 +89,9 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/editor', [WorkspaceController::class, 'editors'])->name('app.editors');
         Route::post('/editor/apply', [WorkspaceController::class, 'applyEditor'])->name('app.editors.apply');
+        Route::get('/discover', [DiscoveryController::class, 'index'])->name('app.discover');
+        Route::post('/discover/{creator}/connect', [DiscoveryController::class, 'connect'])->name('app.discover.connect');
+
         Route::get('/brand', [WorkspaceController::class, 'brandProfile'])->name('app.brand');
         Route::post('/brand', [WorkspaceController::class, 'saveBrand'])->name('app.brand.save');
         Route::get('/app/campaigns', [WorkspaceController::class, 'campaigns'])->name('app.campaigns');

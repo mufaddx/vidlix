@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Email;
 
 use App\Contracts\EmailProviderInterface;
 use App\Models\Message;
+use App\Services\Email\OutboundIdentity;
 use Illuminate\Mail\Message as MailMessage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -34,7 +35,7 @@ class SmtpEmailProvider implements EmailProviderInterface
             && filled(config('mail.mailers.'.$mailer.'.host', config('mail.mailers.'.$mailer.'.transport')));
     }
 
-    public function sendThreadReply(Message $message, string $toEmail, string $replyTo): array
+    public function sendThreadReply(Message $message, string $toEmail, OutboundIdentity $identity): array
     {
         if (! $this->isConfigured()) {
             return [
@@ -50,14 +51,11 @@ class SmtpEmailProvider implements EmailProviderInterface
         $messageId = Str::uuid().'@'.$domain;
 
         try {
-            Mail::raw((string) $message->body, function (MailMessage $mail) use ($toEmail, $replyTo, $subject, $message, $messageId) {
+            Mail::raw((string) $message->body, function (MailMessage $mail) use ($toEmail, $identity, $subject, $message, $messageId) {
                 $mail->to($toEmail)
                     ->subject($subject)
-                    ->replyTo($replyTo)
-                    ->from(
-                        (string) config('vidlix.email.from_address'),
-                        (string) config('vidlix.email.from_name'),
-                    );
+                    ->replyTo($identity->replyTo)
+                    ->from($identity->fromAddress, $identity->fromName);
 
                 $headers = $mail->getSymfonyMessage()->getHeaders();
                 $headers->addIdHeader('Message-ID', $messageId);

@@ -61,6 +61,7 @@ app/
     Taxonomy/           CategoryService           ← creator/editor/brand categories
     Workspace/          WorkspaceContext          ← who you are acting as
     Marketplace/        MarketplaceEngine         ← the big domain service
+    Marketplace/        CreatorDiscovery          ← brand-side creator search
   Http/Controllers/
     Api/V1/             AuthController, MarketplaceController, WorkspaceApiController
     App/                WorkspaceController (large), InboxController, InstagramController
@@ -121,11 +122,10 @@ Hostinger with MySQL + SSL.
 - Legal CMS pages (`/p/terms`, `/p/privacy`, …) still contain placeholder text.
 - Creator payout bank-account onboarding UI does not exist; `payout_accounts`
   is admin/manual.
-- Brand discovery (search creators by category + follower count) not built.
-- Editor public page + inquiry form not built (creators have one; editors do not).
-- Role-based sender addresses (creator@ / editor@) not built.
-- `creator_profiles.follower_count` column exists but nothing writes it yet —
-  it must only ever be filled from a real Instagram sync.
+- Admin UI to approve pending categories does not exist yet; use
+  `CategoryService::approve()` from tinker.
+- Admin UI to assign a company-provided manager does not exist;
+  `ManagerDirectory::invite(..., source: 'company')` does it.
 
 ---
 
@@ -181,6 +181,17 @@ fail `pint --test` (pre-existing, untouched).
   approves. A creator may hold at most `Category::MAX_PER_CREATOR` (3).
 - Signup no longer requires a role; roles are applied for afterwards at
   `/roles`, and one person may hold creator + editor + brand.
+- `creator_profiles.follower_count` is denormalised for brand search and is
+  written **only** from a live Graph sync. A creator who has not connected
+  Instagram has null, and is excluded from follower-filtered search rather than
+  shown as having zero.
+- Outbound thread identity comes from `OutboundEmailService::identityFor()`:
+  creator threads leave from `creator@`, editor threads from `editor@`, and the
+  display name carries the person's name and Instagram handle. Inbound accepts a
+  routing token on any of reply@ / creator@ / editor@.
+- Editor enquiries use `PublicEnquiryService` (one fixed form); creators keep
+  `PublicInquiryService` because their page has a versioned form builder whose
+  answers must be stored against the version that produced them.
 - Rejected webhooks are logged under a throwaway id so a forged event cannot
   occupy the unique `provider_event_id` slot and suppress the genuine delivery.
 
