@@ -2,9 +2,29 @@
 @section('title', __('Invoices'))
 @section('content')
 <h1>{{ __('Invoices') }}</h1>
-@forelse($items as $i)
-    <p>{{ $i->invoice_number }} · {{ $i->status }} · {{ $i->total_minor }}</p>
-@empty
-    <p class="muted">{{ __('No invoices') }}</p>
-@endforelse
+@if($items->isEmpty())
+    <p class="muted">{{ __('No invoices yet.') }}</p>
+@else
+<table class="table">
+    <thead><tr>
+        <th>{{ __('Number') }}</th>
+        <th>{{ __('Status') }}</th>
+        <th>{{ __('Due') }}</th>
+        <th>{{ __('Total') }}</th>
+        <th></th>
+    </tr></thead>
+    <tbody>
+    @foreach($items as $i)
+        <tr>
+            <td>{{ $i->invoice_number }}</td>
+            <td>{{ $i->status }}</td>
+            <td>{{ $i->due_date?->toDateString() }}</td>
+            <td>{{ number_format($i->total_minor / 100, 2) }} {{ $i->currency }}</td>
+            <td><a href="{{ route('app.invoices.pdf', $i) }}">{{ __('Download PDF') }}</a></td>
+        </tr>
+    @endforeach
+    </tbody>
+</table>
+<p class="muted">{{ __('An invoice records what is owed. A payment is confirmed only when the provider says so.') }}</p>
+@endif
 @endsection

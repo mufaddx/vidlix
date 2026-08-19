@@ -28,4 +28,9 @@ class Invoice extends Model
     {
         return $this->belongsTo(User::class, 'seller_user_id');
     }
+
+    public function buyer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'buyer_user_id');
+    }
 }

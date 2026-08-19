@@ -23,6 +23,7 @@ use App\Models\Role;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\Billing\InvoicePdf;
 use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
 use App\Services\Managers\ManagerDirectory;
@@ -31,6 +32,7 @@ use App\Services\Support\HelpDesk;
 use App\Services\Workspace\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -526,9 +528,27 @@ class WorkspaceController extends Controller
     public function invoices(): View
     {
         $id = request()->user()->id;
-        $items = Invoice::query()->where('seller_user_id', $id)->orWhere('buyer_user_id', $id)->latest()->get();
+        $items = Invoice::query()
+            ->where(fn ($q) => $q->where('seller_user_id', $id)->orWhere('buyer_user_id', $id))
+            ->with('items')
+            ->latest()
+            ->get();
 
         return view('app.invoices', compact('items'));
+    }
+
+    /**
+     * The PDF of one invoice. Only the two parties to it may download it.
+     */
+    public function invoicePdf(Request $request, Invoice $invoice, InvoicePdf $pdf): Response
+    {
+        $id = $request->user()->id;
+        abort_unless($invoice->seller_user_id === $id || $invoice->buyer_user_id === $id, 404);
+
+        return response($pdf->render($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$pdf->filename($invoice).'"',
+        ]);
     }
 
     public function blogIndex(): View

@@ -181,6 +181,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/proposals', [WorkspaceController::class, 'proposals'])->name('app.proposals');
         Route::post('/proposals', [WorkspaceController::class, 'storeProposal'])->name('app.proposals.store');
         Route::get('/invoices', [WorkspaceController::class, 'invoices'])->name('app.invoices');
+        Route::get('/invoices/{invoice}/pdf', [WorkspaceController::class, 'invoicePdf'])->name('app.invoices.pdf');
     });
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
