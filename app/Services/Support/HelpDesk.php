@@ -113,6 +113,45 @@ class HelpDesk
         });
     }
 
+    /**
+     * The sender's own open thread, if they have one.
+     *
+     * Matching a help desk reply to its sender is safe in a way that matching a
+     * creator or editor thread is not: help@ is one shared company mailbox, so
+     * the only thread this person can be attached to is their own. A creator
+     * inbox holds threads with many different brands, which is why that path
+     * still refuses to guess and leaves the mail unmatched.
+     */
+    public function openThreadFor(string $email): ?SupportThread
+    {
+        return SupportThread::query()
+            ->whereIn('status', ['open', 'pending'])
+            ->whereHas('conversation.externalContact', fn ($q) => $q->whereRaw('lower(email) = ?', [strtolower($email)]))
+            ->latest()
+            ->first();
+    }
+
+    /** A reply that arrived at help@ for a thread already in progress. */
+    public function appendInbound(SupportThread $thread, array $mail): Message
+    {
+        $message = Message::query()->create([
+            'conversation_id' => $thread->conversation_id,
+            'direction' => 'inbound',
+            'body' => (string) $mail['text'],
+            'provider_message_id' => $mail['provider_event_id'] ?? null,
+            'email_message_id' => $mail['message_id'] ?? null,
+            'in_reply_to' => $mail['in_reply_to'] ?? null,
+            'delivery_status' => 'received',
+        ]);
+
+        $thread->conversation->update(['last_message_at' => now()]);
+        // Their answer puts the ball back in our court.
+        $thread->update(['status' => 'open']);
+        $this->audit->record('support.reply_received', $thread);
+
+        return $message;
+    }
+
     /** Staff answer. The reply is queued and only ever reported as the provider reports it. */
     public function reply(SupportThread $thread, User $staff, string $body): Message
     {

@@ -111,6 +111,17 @@ class InboundEmailNormalizer
         return $map;
     }
 
+    /**
+     * Public entry point for callers that already have the recipient list —
+     * the provider-API path, where there is no HTTP payload to read.
+     *
+     * @param  list<string>  $recipients
+     */
+    public function routingTokenFrom(array $recipients): ?string
+    {
+        return $this->routingToken([], $recipients);
+    }
+
     private function routingToken(array $payload, array $recipients): ?string
     {
         $explicit = $payload['routing_token'] ?? null;

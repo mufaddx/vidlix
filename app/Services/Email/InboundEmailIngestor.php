@@ -54,7 +54,27 @@ class InboundEmailIngestor
                 // contact, not a misrouted reply — open a ticket rather than
                 // parking it in the unmatched queue.
                 if ($this->addressedToHelpDesk($mail) && filled($mail['from_email'] ?? null)) {
-                    $thread = app(HelpDesk::class)->openFromEmail($mail);
+                    $desk = app(HelpDesk::class);
+
+                    // A reply to help@ often loses the plus-address token, so
+                    // fall back to this sender's own open thread before opening
+                    // a second one for the same conversation.
+                    $existing = $desk->openThreadFor((string) $mail['from_email']);
+                    if ($existing) {
+                        $desk->appendInbound($existing, $mail);
+                        $event->update([
+                            'conversation_id' => $existing->conversation_id,
+                            'match_status' => 'help_desk',
+                        ]);
+
+                        return [
+                            'status' => 'help_desk_reply',
+                            'conversation_id' => $existing->conversation_id,
+                            'detail' => 'Added to help desk thread '.$existing->reference.'.',
+                        ];
+                    }
+
+                    $thread = $desk->openFromEmail($mail);
                     $event->update([
                         'conversation_id' => $thread->conversation_id,
                         'match_status' => 'help_desk',

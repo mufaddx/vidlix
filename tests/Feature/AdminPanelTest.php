@@ -13,6 +13,7 @@ use App\Services\Support\HelpDesk;
 use App\Support\Ability;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AdminPanelTest extends TestCase
@@ -221,6 +222,87 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseHas('inbound_email_events', ['match_status' => 'help_desk']);
         // A stranger, not a member — so no account is invented for them.
         $this->assertNull($thread->user_id);
+    }
+
+    public function test_a_reply_to_the_help_desk_joins_the_senders_existing_thread(): void
+    {
+        config([
+            'vidlix.email.inbound_domain' => 'vidlix.in',
+            'vidlix.email.api_key' => 're_test',
+            'vidlix.webhooks.email_secret' => 'whsec_'.base64_encode(str_repeat('k', 24)),
+            'vidlix.webhooks.schemes.email' => 'svix',
+        ]);
+
+        $member = User::factory()->create(['email' => 'writer@outside.test']);
+        $thread = app(HelpDesk::class)->openFromMember($member, 'First question', 'Original message.');
+
+        // Resend sends metadata only; the body comes from the receiving API.
+        Http::fake([
+            'api.resend.com/emails/receiving/*' => Http::response([
+                'id' => 'inbound-1',
+                'from' => 'Writer <writer@outside.test>',
+                'to' => ['help@vidlix.in'],
+                'received_for' => ['help@vidlix.in'],
+                'subject' => 'Re: First question',
+                'text' => 'Thanks, that fixed it.',
+                'message_id' => '<abc@mail.gmail.com>',
+                'headers' => ['in-reply-to' => '<xyz@vidlix.in>'],
+            ], 200),
+        ]);
+
+        $this->postSvix(['type' => 'email.received', 'data' => ['email_id' => 'inbound-1']])
+            ->assertOk()
+            ->assertJsonPath('outcome', 'help_desk_reply');
+
+        // Appended to the same thread, not a duplicate one.
+        $this->assertSame(1, SupportThread::query()->count());
+        $this->assertDatabaseHas('messages', [
+            'conversation_id' => $thread->conversation_id,
+            'direction' => 'inbound',
+            'body' => 'Thanks, that fixed it.',
+        ]);
+        // Their reply reopens it for staff.
+        $this->assertSame('open', $thread->fresh()->status);
+    }
+
+    public function test_a_received_email_whose_body_cannot_be_fetched_is_not_stored_empty(): void
+    {
+        config([
+            'vidlix.email.inbound_domain' => 'vidlix.in',
+            'vidlix.email.api_key' => 're_test',
+            'vidlix.webhooks.email_secret' => 'whsec_'.base64_encode(str_repeat('k', 24)),
+            'vidlix.webhooks.schemes.email' => 'svix',
+        ]);
+
+        Http::fake([
+            'api.resend.com/emails/receiving/*' => Http::response(['message' => 'not found'], 404),
+        ]);
+
+        $this->postSvix(['type' => 'email.received', 'data' => ['email_id' => 'missing-1']])
+            ->assertOk()
+            ->assertJsonPath('outcome', 'fetch_failed');
+
+        // The provider keeps the message and retries, so storing a blank one
+        // would be worse than storing nothing.
+        $this->assertDatabaseCount('support_threads', 0);
+        $this->assertDatabaseCount('messages', 0);
+    }
+
+    /** Signs a payload the way Svix does, so the webhook accepts it. */
+    private function postSvix(array $payload)
+    {
+        $secret = (string) config('vidlix.webhooks.email_secret');
+        $body = json_encode($payload);
+        $id = 'msg_'.bin2hex(random_bytes(6));
+        $ts = time();
+        $signature = base64_encode(hash_hmac('sha256', $id.'.'.$ts.'.'.$body, base64_decode(substr($secret, 6)), true));
+
+        return $this->call('POST', '/webhooks/email/events', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_SVIX_ID' => $id,
+            'HTTP_SVIX_TIMESTAMP' => (string) $ts,
+            'HTTP_SVIX_SIGNATURE' => 'v1,'.$signature,
+        ], $body);
     }
 
     public function test_a_company_provided_manager_is_labelled_as_such(): void
