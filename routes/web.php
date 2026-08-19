@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAudienceController;
+use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminEmployeeController;
 use App\Http\Controllers\Admin\AdminHelpDeskController;
@@ -48,6 +50,15 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
+
+/*
+ | The admin panel has its own front door. Signing in as a member is never a
+ | way in, and a member who opens /admin sees a staff sign-in rather than their
+ | own account.
+ */
+Route::get('/admin/login', [AdminAuthController::class, 'create'])->name('admin.login');
+Route::post('/admin/login', [AdminAuthController::class, 'store'])->middleware('throttle:login')->name('admin.login.store');
+Route::post('/admin/logout', [AdminAuthController::class, 'destroy'])->middleware('auth')->name('admin.logout');
 
 /*
  | Manager invitations are reachable without an account on purpose: the invited
@@ -155,6 +166,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/disputes', [AdminOpsController::class, 'disputes'])->name('disputes')->middleware('can:disputes.resolve');
         Route::post('/disputes/{dispute}', [AdminOpsController::class, 'resolveDispute'])->name('disputes.resolve')->middleware('can:disputes.resolve');
         Route::get('/tickets', [AdminOpsController::class, 'tickets'])->name('tickets')->middleware('can:support.view');
+
+        // Influencers
+        Route::get('/influencers', [AdminAudienceController::class, 'influencers'])->name('influencers')->middleware('can:users.view');
+        Route::get('/influencers/categories', [AdminAudienceController::class, 'categories'])->defaults('type', 'creator')->name('influencers.categories')->middleware('can:categories.approve');
+
+        // Brands
+        Route::get('/brands-list', [AdminAudienceController::class, 'brands'])->name('brands')->middleware('can:users.view');
+        Route::get('/brands-list/verification', [AdminOpsController::class, 'verification'])->name('brands.verification')->middleware('can:verification.decide');
+        Route::get('/brands-list/campaigns', [AdminAudienceController::class, 'brandCampaigns'])->name('brands.campaigns')->middleware('can:verification.decide');
+
+        // Editors
+        Route::get('/editors-list', [AdminAudienceController::class, 'editors'])->name('editors')->middleware('can:users.view');
+        Route::get('/editors-list/verification', [AdminOpsController::class, 'verification'])->name('editors.verification')->middleware('can:verification.decide');
+        Route::get('/editors-list/categories', [AdminAudienceController::class, 'categories'])->defaults('type', 'editor')->name('editors.categories')->middleware('can:categories.approve');
+
+        Route::post('/categories/{category}', [AdminAudienceController::class, 'decideCategory'])->name('categories.decide')->middleware('can:categories.approve');
 
         // Help desk — help@<domain> and in-app tickets land here.
         Route::get('/help-desk', [AdminHelpDeskController::class, 'index'])->name('help-desk')->middleware('can:support.view');

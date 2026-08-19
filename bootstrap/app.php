@@ -29,6 +29,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureAdmin::class,
             'workspace' => EnsureWorkspace::class,
         ]);
+        /*
+         | The admin panel is a separate front door. A guest who opens an admin
+         | URL must land on the staff sign-in, not the member one — otherwise
+         | signing in as a member looks like the way into the panel.
+         */
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('admin') || $request->is('admin/*')
+                ? route('admin.login')
+                : route('login'),
+        );
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
         ]);

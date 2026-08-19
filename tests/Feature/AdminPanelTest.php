@@ -305,6 +305,91 @@ class AdminPanelTest extends TestCase
         ], $body);
     }
 
+    public function test_the_admin_panel_has_its_own_sign_in(): void
+    {
+        // A visitor with no session gets the staff door, not the member login.
+        $this->get('/admin')->assertRedirect(route('admin.login'));
+        $this->get('/admin/login')->assertOk()->assertSee('Staff and employee sign in', false);
+    }
+
+    public function test_a_member_account_cannot_sign_in_to_the_admin_panel(): void
+    {
+        User::factory()->create(['email' => 'member@test.com', 'password' => 'MemberPass123']);
+
+        $this->post('/admin/login', ['email' => 'member@test.com', 'password' => 'MemberPass123'])
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    public function test_a_wrong_password_and_a_non_staff_account_are_indistinguishable(): void
+    {
+        User::factory()->create(['email' => 'member2@test.com', 'password' => 'MemberPass123']);
+
+        // Same message either way, so this page cannot be used to discover
+        // which accounts hold staff access.
+        $wrongPassword = $this->post('/admin/login', ['email' => 'member2@test.com', 'password' => 'nope'])
+            ->assertSessionHasErrors('email');
+        $notStaff = $this->post('/admin/login', ['email' => 'member2@test.com', 'password' => 'MemberPass123'])
+            ->assertSessionHasErrors('email');
+
+        $this->assertSame(
+            $wrongPassword->getSession()->get('errors')->first('email'),
+            $notStaff->getSession()->get('errors')->first('email'),
+        );
+    }
+
+    public function test_staff_can_sign_in_through_the_admin_door(): void
+    {
+        $admin = $this->superAdmin();
+        $admin->forceFill(['password' => 'StaffPass1234'])->save();
+
+        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'StaffPass1234'])
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_the_admin_panel_does_not_render_the_member_workspace(): void
+    {
+        $response = $this->actingAs($this->superAdmin())->get('/admin');
+
+        $response->assertOk()
+            ->assertSee('Admin panel', false)
+            // Member navigation must not leak into a staff screen.
+            ->assertDontSee(route('app.earnings'), false)
+            ->assertDontSee(route('creator.inbox'), false)
+            ->assertDontSee('css/app.css', false);
+    }
+
+    public function test_each_admin_page_states_its_own_name(): void
+    {
+        $admin = $this->superAdmin();
+
+        foreach ([
+            '/admin/help-desk' => 'Help desk',
+            '/admin/employees' => 'Employees',
+            '/admin/managers' => 'Managers',
+            '/admin/finance' => 'Finance',
+            '/admin/influencers' => 'All influencers',
+        ] as $path => $heading) {
+            $this->actingAs($admin)->get($path)->assertOk()->assertSee($heading, false);
+        }
+    }
+
+    public function test_the_sidebar_only_offers_sections_the_employee_can_use(): void
+    {
+        $support = $this->employeeWith([Ability::SUPPORT_VIEW]);
+
+        $response = $this->actingAs($support)->get('/admin/help-desk');
+
+        $response->assertOk()
+            ->assertSee('Operations', false)
+            // No ability for these, so they are not rendered at all.
+            ->assertDontSee('All influencers', false)
+            ->assertDontSee('Employees', false);
+    }
+
     public function test_a_company_provided_manager_is_labelled_as_such(): void
     {
         $admin = $this->superAdmin();

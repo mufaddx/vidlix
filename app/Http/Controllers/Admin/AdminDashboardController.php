@@ -9,7 +9,6 @@ use App\Models\CreatorProfile;
 use App\Models\EditorProfile;
 use App\Models\HomepageSection;
 use App\Models\User;
-use App\Models\WebhookLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,12 +18,13 @@ class AdminDashboardController extends Controller
     public function __invoke(): View
     {
         return view('admin.dashboard', [
-            'users' => User::query()->count(),
-            'creators' => CreatorProfile::query()->count(),
-            'editors' => EditorProfile::query()->count(),
-            'brands' => BrandProfile::query()->count(),
-            'webhooks' => WebhookLog::query()->latest()->limit(10)->get(),
-            'audits' => AuditLog::query()->latest()->limit(15)->get(),
+            'counts' => [
+                'users' => User::query()->count(),
+                'creators' => CreatorProfile::query()->count(),
+                'editors' => EditorProfile::query()->count(),
+                'brands' => BrandProfile::query()->count(),
+            ],
+            'audit' => AuditLog::query()->latest()->limit(15)->get(),
         ]);
     }
 

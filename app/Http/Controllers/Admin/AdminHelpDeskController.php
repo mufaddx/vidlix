@@ -25,7 +25,11 @@ class AdminHelpDeskController extends Controller
         return view('admin.help-desk', [
             'threads' => SupportThread::query()
                 ->when($status !== 'all', fn ($q) => $q->where('status', $status))
-                ->with(['conversation.externalContact', 'user:id,name,email', 'assignee:id,name'])
+                ->with([
+                    'conversation' => fn ($q) => $q->withCount('messages')->with('externalContact'),
+                    'user:id,name,email',
+                    'assignee:id,name',
+                ])
                 ->latest()
                 ->paginate(25)
                 ->withQueryString(),

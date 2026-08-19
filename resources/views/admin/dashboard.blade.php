@@ -1,18 +1,29 @@
-@extends('layouts.app')
-@section('title', __('Admin'))
+@extends('layouts.admin')
+@section('title', __('Overview'))
+@section('subheading', __('Where things stand right now'))
 @section('content')
-<h1>{{ __('Operations') }}</h1>
-<div class="grid">
-    <article class="card"><p class="muted">{{ __('Users') }}</p><p class="stat">{{ $users }}</p></article>
-    <article class="card"><p class="muted">{{ __('Creators') }}</p><p class="stat">{{ $creators }}</p></article>
-    <article class="card"><p class="muted">{{ __('Editors') }}</p><p class="stat">{{ $editors }}</p></article>
-    <article class="card"><p class="muted">{{ __('Brands') }}</p><p class="stat">{{ $brands }}</p></article>
+<div class="a-cards">
+    <div class="a-card"><div class="a-label">{{ __('Members') }}</div><div class="a-value">{{ $counts['users'] ?? 0 }}</div></div>
+    <div class="a-card"><div class="a-label">{{ __('Influencers') }}</div><div class="a-value">{{ $counts['creators'] ?? 0 }}</div></div>
+    <div class="a-card"><div class="a-label">{{ __('Editors') }}</div><div class="a-value">{{ $counts['editors'] ?? 0 }}</div></div>
+    <div class="a-card"><div class="a-label">{{ __('Brands') }}</div><div class="a-value">{{ $counts['brands'] ?? 0 }}</div></div>
 </div>
-<p><a href="{{ route('admin.cms') }}">{{ __('CMS') }}</a> · <a href="{{ route('admin.users') }}">{{ __('Users') }}</a> · <a href="{{ route('admin.verification') }}">{{ __('Verification') }}</a> · <a href="{{ route('admin.finance') }}">{{ __('Finance') }}</a> · <a href="{{ route('admin.disputes') }}">{{ __('Disputes') }}</a> · <a href="{{ route('admin.tickets') }}">{{ __('Tickets') }}</a></p>
-<h2>{{ __('Recent audit') }}</h2>
-<table class="table">
-    @foreach($audits as $log)
-        <tr><td>{{ $log->created_at }}</td><td>{{ $log->action }}</td><td>{{ $log->request_id }}</td></tr>
-    @endforeach
-</table>
+
+<div class="a-panel">
+    <div class="a-panel-head">{{ __('Recent activity') }}</div>
+    <table class="a-table">
+        <thead><tr><th>{{ __('When') }}</th><th>{{ __('Action') }}</th><th>{{ __('Request') }}</th></tr></thead>
+        <tbody>
+        @forelse($audit as $row)
+            <tr>
+                <td>{{ $row->created_at }}</td>
+                <td>{{ $row->action }}</td>
+                <td class="a-sub">{{ $row->request_id }}</td>
+            </tr>
+        @empty
+            <tr><td colspan="3" class="a-empty">{{ __('Nothing recorded yet.') }}</td></tr>
+        @endforelse
+        </tbody>
+    </table>
+</div>
 @endsection
