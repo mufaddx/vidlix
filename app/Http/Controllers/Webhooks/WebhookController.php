@@ -33,9 +33,16 @@ class WebhookController extends Controller
         return $this->handle('meta', $request);
     }
 
-    public function email(Request $request): JsonResponse
+    /** Inbound mail: may create conversations and messages. */
+    public function emailInbound(Request $request): JsonResponse
     {
-        return $this->handle('email', $request);
+        return $this->handle('email_inbound', $request);
+    }
+
+    /** Delivery and bounce events: may only update an existing message. */
+    public function emailEvents(Request $request): JsonResponse
+    {
+        return $this->handle('email_events', $request);
     }
 
     public function payment(Request $request): JsonResponse

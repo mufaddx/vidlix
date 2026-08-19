@@ -41,9 +41,8 @@ Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')-
 
 Route::prefix('webhooks')->middleware('throttle:webhooks')->group(function () {
     Route::match(['get', 'post'], 'meta', [WebhookController::class, 'meta']);
-    Route::post('email/inbound', [WebhookController::class, 'email']);
-    // Delivery / bounce events share the email handler; the payload shape decides.
-    Route::post('email/events', [WebhookController::class, 'email']);
+    Route::post('email/inbound', [WebhookController::class, 'emailInbound']);
+    Route::post('email/events', [WebhookController::class, 'emailEvents']);
     Route::post('payment', [WebhookController::class, 'payment']);
     Route::post('payout', [WebhookController::class, 'payout']);
 });

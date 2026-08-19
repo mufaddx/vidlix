@@ -18,10 +18,14 @@ class DeliveryEventHandler
     {
         $events = $this->flatten($payload);
         $handled = 0;
+        $ignored = 0;
 
         foreach ($events as $event) {
             $status = $this->normalizeStatus((string) ($event['event'] ?? $event['RecordType'] ?? $event['type'] ?? ''));
             if ($status === null) {
+                // Not a delivery event (contact.*, domain.*, an open, a click).
+                $ignored++;
+
                 continue;
             }
 
@@ -46,8 +50,18 @@ class DeliveryEventHandler
             $handled++;
         }
 
+        if ($handled === 0) {
+            return [
+                'status' => $ignored > 0 && $ignored === count($events) ? 'ignored' : 'no_matching_messages',
+                'handled' => 0,
+                'detail' => $ignored > 0
+                    ? 'Event type is not a delivery event; nothing was changed.'
+                    : 'No stored message matched this delivery event.',
+            ];
+        }
+
         return [
-            'status' => $handled > 0 ? 'handled' : 'no_matching_messages',
+            'status' => 'handled',
             'handled' => $handled,
             'detail' => $handled.' delivery event(s) applied.',
         ];

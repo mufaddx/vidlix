@@ -39,7 +39,8 @@ class WebhookDispatcher
         $result = match ($log->provider) {
             'payment' => $this->settlement->settlePaymentEvent($payload, $log->provider_event_id, $log->event_type),
             'payout' => $this->settlement->settlePayoutEvent($payload, $log->provider_event_id, $log->event_type),
-            'email' => $this->handleEmail($request, $payload),
+            'email_inbound' => $this->handleInboundEmail($request),
+            'email_events' => $this->handleDeliveryEvent($payload),
             'meta' => $this->meta->handle($payload),
             default => ['status' => 'ignored', 'detail' => 'Unknown webhook provider.'],
         };
@@ -56,33 +57,25 @@ class WebhookDispatcher
         return $result;
     }
 
-    /**
-     * One endpoint carries both inbound mail and delivery events; the payload
-     * shape decides which. Delivery events never create conversations.
-     */
-    private function handleEmail(Request $request, array $payload): array
+    /** Only the inbound endpoint may create conversations or messages. */
+    private function handleInboundEmail(Request $request): array
     {
-        if ($this->looksLikeDeliveryEvent($payload)) {
-            $handled = $this->deliveryEvents->handle($payload);
-
-            return ['status' => $handled['status'], 'detail' => $handled['detail']];
-        }
-
         $result = $this->ingestor->ingest($this->normalizer->normalize($request));
 
         return ['status' => $result['status'], 'detail' => $result['detail']];
     }
 
-    private function looksLikeDeliveryEvent(array $payload): bool
+    /**
+     * The events endpoint only updates delivery status. Providers let you
+     * subscribe an endpoint to unrelated event families (Resend will happily
+     * send contact.* here), and those must be ignored outright — routing them
+     * into the inbound path would fill the operator triage queue in
+     * inbound_email_events with rows that are not mail at all.
+     */
+    private function handleDeliveryEvent(array $payload): array
     {
-        $first = array_is_list($payload) ? ($payload[0] ?? []) : $payload;
-        if (! is_array($first)) {
-            return false;
-        }
+        $handled = $this->deliveryEvents->handle($payload);
 
-        return filled($first['event'] ?? null)
-            // Resend namespaces its delivery events; inbound mail does not match.
-            || str_starts_with((string) ($first['type'] ?? ''), 'email.')
-            || in_array($first['RecordType'] ?? null, ['Delivery', 'Bounce', 'SpamComplaint'], true);
+        return ['status' => $handled['status'], 'detail' => $handled['detail']];
     }
 }

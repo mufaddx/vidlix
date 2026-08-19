@@ -49,10 +49,12 @@ class ResendEmailTest extends TestCase
     }
 
     /** Signs exactly the way Svix does: base64(hmac_sha256("{id}.{ts}.{body}")). */
-    private function svixPost(array $payload, ?string $secret = null, ?int $timestamp = null)
+    private function svixPost(array $payload, ?string $secret = null, ?int $timestamp = null, ?string $id = null)
     {
         $body = json_encode($payload);
-        $id = 'msg_2abc';
+        // Unique per call: Svix retries reuse the id, so a shared one would make
+        // the second event in a test look like a replay.
+        $id ??= 'msg_'.bin2hex(random_bytes(6));
         $timestamp ??= time();
         $key = base64_decode(substr($secret ?? self::SECRET, 6), true);
         $signature = base64_encode(hash_hmac('sha256', $id.'.'.$timestamp.'.'.$body, $key, true));
@@ -151,6 +153,40 @@ class ResendEmailTest extends TestCase
             null,
             time() - 3600,
         )->assertStatus(401);
+    }
+
+    public function test_a_non_delivery_event_is_ignored_and_never_becomes_inbound_mail(): void
+    {
+        $this->configureResend();
+
+        // Resend lets you subscribe one endpoint to unrelated event families.
+        // These must be ignored outright: routing them into the inbound path
+        // would fill the operator triage queue with rows that are not mail.
+        foreach (['contact.created', 'contact.deleted', 'domain.created'] as $i => $type) {
+            $this->svixPost(['type' => $type, 'data' => ['id' => 'x'.$i]])
+                ->assertOk()
+                ->assertJsonPath('outcome', 'ignored');
+        }
+
+        $this->assertDatabaseCount('inbound_email_events', 0);
+        $this->assertDatabaseCount('messages', 0);
+    }
+
+    public function test_the_events_endpoint_can_never_create_a_conversation(): void
+    {
+        $this->configureResend();
+
+        // A well-formed inbound payload sent to the events endpoint by mistake
+        // must not be ingested as mail.
+        $this->svixPost([
+            'from' => 'brand@abc.test',
+            'to' => 'reply+tokresend@inbound.vidlix.in',
+            'subject' => 'Re: Summer campaign',
+            'text' => 'Wrong endpoint.',
+        ])->assertOk();
+
+        $this->assertDatabaseCount('inbound_email_events', 0);
+        $this->assertDatabaseCount('conversations', 0);
     }
 
     public function test_a_bounce_is_recorded_from_the_tag_when_the_id_is_unknown(): void

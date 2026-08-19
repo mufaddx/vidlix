@@ -26,10 +26,19 @@ class SignatureVerifier
     /** How far a Svix timestamp may drift before the delivery is treated as a replay. */
     private const SVIX_TOLERANCE_SECONDS = 300;
 
+    /**
+     * Inbound mail and delivery events arrive on separate endpoints but are the
+     * same provider account, so they share one secret and scheme.
+     */
+    private function configKey(string $provider): string
+    {
+        return str_starts_with($provider, 'email') ? 'email' : $provider;
+    }
+
     /** Secret each provider signs with. Meta signs with the app secret, not the verify token. */
     public function secretFor(string $provider): ?string
     {
-        $secret = match ($provider) {
+        $secret = match ($this->configKey($provider)) {
             'payment' => config('vidlix.webhooks.payment_secret'),
             'payout' => config('vidlix.webhooks.payout_secret'),
             'email' => config('vidlix.webhooks.email_secret'),
@@ -42,7 +51,7 @@ class SignatureVerifier
 
     public function scheme(string $provider): string
     {
-        return (string) (config('vidlix.webhooks.schemes.'.$provider) ?: 'hmac_hex');
+        return (string) (config('vidlix.webhooks.schemes.'.$this->configKey($provider)) ?: 'hmac_hex');
     }
 
     public function verify(string $provider, Request $request, ?string $secret): string
@@ -71,7 +80,7 @@ class SignatureVerifier
     {
         $headers = array_merge(
             ['X-Webhook-Signature'],
-            (array) config('vidlix.webhooks.headers.'.$provider, []),
+            (array) config('vidlix.webhooks.headers.'.$this->configKey($provider), []),
         );
 
         $expected = hash_hmac('sha256', $request->getContent(), $secret);

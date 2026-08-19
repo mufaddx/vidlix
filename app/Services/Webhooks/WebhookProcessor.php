@@ -65,7 +65,7 @@ class WebhookProcessor
                 // signed body is what we deduplicate on.
                 hash('sha256', $request->getContent()),
             ],
-            'email' => [
+            'email', 'email_inbound', 'email_events' => [
                 // svix-id is Resend's per-delivery id and is what a retry reuses.
                 $request->header('svix-id'),
                 $request->input('id'),
