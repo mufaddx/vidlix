@@ -47,6 +47,18 @@ return [
             'report' => false,
         ],
 
+        /*
+         | S3-compatible: AWS S3, Cloudflare R2, DigitalOcean Spaces.
+         |
+         | For R2: region is "auto", endpoint is
+         | https://<account-id>.r2.cloudflarestorage.com, and path-style is on.
+         |
+         | The checksum settings matter. Recent AWS SDK versions default to
+         | "when_supported", which attaches x-amz-checksum-* headers to every
+         | request; R2 rejects those on some operations. "when_required" is the
+         | historical behaviour, still calculates checksums where the API
+         | demands them, and works against S3 and R2 alike.
+         */
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -56,6 +68,8 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'request_checksum_calculation' => env('AWS_REQUEST_CHECKSUM_CALCULATION', 'when_required'),
+            'response_checksum_validation' => env('AWS_RESPONSE_CHECKSUM_VALIDATION', 'when_required'),
             'throw' => false,
             'report' => false,
         ],

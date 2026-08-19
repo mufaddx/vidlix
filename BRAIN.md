@@ -93,8 +93,11 @@ half-working integration.
 | Payouts | `razorpayx` | not set up | `POST /webhooks/payout` |
 | Email | **`resend`** (chosen) /`sendgrid`/`smtp`/`ses`/`postmark` | key issued | `/webhooks/email/inbound`, `/webhooks/email/events` |
 | Instagram | `meta` | none | `GET+POST /webhooks/meta` |
-| Storage | S3-compatible | none (local disk) | — |
+| Storage | **Cloudflare R2** (chosen) | pending credentials | — |
 | Push | `fcm` | none | — |
+
+Verify storage with `php artisan vidlix:storage-check` — it writes, reads,
+signs, fetches and deletes a probe object.
 
 All default to `unconfigured`. Detail: `docs/INTEGRATIONS.md`.
 
@@ -154,6 +157,10 @@ fail `pint --test` (pre-existing, untouched).
   `{svix-id}.{svix-timestamp}.{raw body}`, HMAC-SHA256 with the base64-decoded
   `whsec_` secret, base64 encoded, and the header may hold several
   space-separated `v1,<sig>` values. A 5-minute timestamp window rejects replays.
+- Cloudflare R2 rejects the `x-amz-checksum-*` headers that recent AWS SDK
+  versions attach by default, so `config/filesystems.php` pins
+  `request_checksum_calculation` / `response_checksum_validation` to
+  `when_required`. Works for real S3 too.
 - Rejected webhooks are logged under a throwaway id so a forged event cannot
   occupy the unique `provider_event_id` slot and suppress the genuine delivery.
 
