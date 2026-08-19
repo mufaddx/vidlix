@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../api.dart';
 import '../theme.dart';
+import 'campaigns_screen.dart';
+import 'earnings_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key, required this.api, required this.onSignOut});
@@ -17,6 +19,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Map<String, dynamic> me = {};
   Map<String, dynamic> instagram = {};
   Map<String, dynamic> managers = {};
+  List applications = [];
   List invoices = [];
   bool loading = true;
 
@@ -31,12 +34,14 @@ class _AccountScreenState extends State<AccountScreen> {
     final meRes = await widget.api.get('/me', auth: true);
     final igRes = await widget.api.get('/instagram', auth: true);
     final mgrRes = await widget.api.get('/managers', auth: true);
+    final appRes = await widget.api.get('/applications', auth: true);
     final invRes = await widget.api.get('/invoices', auth: true);
     if (!mounted) return;
     setState(() {
       me = Api.mapOf(meRes);
       instagram = Api.mapOf(igRes);
       managers = Api.mapOf(mgrRes);
+      applications = Api.listOf(appRes);
       invoices = Api.listOf(invRes);
       loading = false;
     });
@@ -92,6 +97,45 @@ class _AccountScreenState extends State<AccountScreen> {
           Text('${me['name'] ?? ''}', style: Theme.of(context).textTheme.titleLarge),
           Text('${me['email'] ?? ''}', style: const TextStyle(color: VidlixTheme.muted)),
           Text('Email verified: ${me['email_verified'] == true ? 'yes' : 'no'}'),
+          const SectionTitle('My applications'),
+          if (applications.isEmpty)
+            const NoticeCard('No campaign applications yet.')
+          else
+            ...applications.take(5).map((a) => Card(
+                  child: ListTile(
+                    title: Text('${a['campaign']?['name'] ?? 'Campaign'}'),
+                    subtitle: Text('${a['status']} · ${Api.money(a['proposed_fee_minor'])}'),
+                  ),
+                )),
+          const SectionTitle('Elsewhere in Vidlix'),
+          // Campaigns and Earnings are not bottom-bar tabs, so this is how they
+          // are reached. Nothing that used to be a tab has been dropped.
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.campaign_outlined),
+              title: const Text('Campaigns'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Campaigns')),
+                  body: CampaignsScreen(api: widget.api),
+                ),
+              )),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text('Earnings'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Earnings')),
+                  body: EarningsScreen(api: widget.api),
+                ),
+              )),
+            ),
+          ),
           const SectionTitle('Instagram'),
           _instagramSection(),
           const SectionTitle('Management'),

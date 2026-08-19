@@ -31,6 +31,9 @@ Route::get('/', HomeController::class)->name('home');
 Route::get('/creators', [HomeController::class, 'creators'])->name('creators.index');
 Route::get('/editors', [HomeController::class, 'editors'])->name('editors.index');
 Route::get('/editors/{username}', [EditorPublicController::class, 'show'])->name('editors.public');
+// The spec writes this link in the singular; the plural is canonical because it
+// matches /creators. Both resolve so a printed or pasted link never dead-ends.
+Route::get('/editor/{username}', fn (string $username) => redirect()->route('editors.public', $username));
 Route::post('/editors/{username}/enquire', [EditorPublicController::class, 'enquire'])
     ->middleware('throttle:public-form')
     ->name('editors.enquire');
