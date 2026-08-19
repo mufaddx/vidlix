@@ -33,16 +33,20 @@ class RegisterController extends Controller
             'status' => 'active',
         ]);
 
-        $role = Role::query()->where('slug', $request->string('role'))->firstOrFail();
-        $user->roles()->attach($role);
-
-        $onboarding->provisionRole($user, $role->slug);
+        // A role only exists once the person applies for it. Signup with a role
+        // is still honoured so existing links and the API keep working.
+        $requested = $request->string('role')->toString();
+        if ($requested !== '') {
+            $role = Role::query()->where('slug', $requested)->firstOrFail();
+            $user->roles()->attach($role);
+            $onboarding->provisionRole($user, $role->slug);
+        }
 
         event(new Registered($user));
         Auth::login($user);
         $request->session()->regenerate();
-        session(['active_role' => $role->slug]);
-        $audit->record('auth.registered', $user, ['role' => $role->slug], $user->id);
+        session(['active_role' => $requested !== '' ? $requested : null]);
+        $audit->record('auth.registered', $user, ['role' => $requested ?: 'none'], $user->id);
 
         return redirect()->route('verification.notice');
     }

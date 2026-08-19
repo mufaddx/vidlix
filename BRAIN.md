@@ -58,6 +58,7 @@ app/
     Media/              MediaStorage              ← object storage keys
     Webhooks/           WebhookProcessor, SignatureVerifier, WebhookDispatcher
     Managers/           ManagerDirectory          ← appointing / activating managers
+    Taxonomy/           CategoryService           ← creator/editor/brand categories
     Workspace/          WorkspaceContext          ← who you are acting as
     Marketplace/        MarketplaceEngine         ← the big domain service
   Http/Controllers/
@@ -120,11 +121,11 @@ Hostinger with MySQL + SSL.
 - Legal CMS pages (`/p/terms`, `/p/privacy`, …) still contain placeholder text.
 - Creator payout bank-account onboarding UI does not exist; `payout_accounts`
   is admin/manual.
-- Editor/brand **category taxonomy** not built yet (admin list + custom, agreed).
-  `editor_profiles.specializations` and `brand_profiles.industry` are still free
-  text and cannot be filtered.
-- Signup still asks for a role. Agreed target: create the account first, then
-  apply as editor or brand afterwards.
+- Brand discovery (search creators by category + follower count) not built.
+- Editor public page + inquiry form not built (creators have one; editors do not).
+- Role-based sender addresses (creator@ / editor@) not built.
+- `creator_profiles.follower_count` column exists but nothing writes it yet —
+  it must only ever be filled from a real Instagram sync.
 
 ---
 
@@ -174,6 +175,12 @@ fail `pint --test` (pre-existing, untouched).
   `manager_assignments`. `source` is `owner` or `company` — the UI must say when
   Vidlix provided the manager. An invitation link can create a *new* account and
   set its password, but can never touch an existing account's password.
+- Categories are rows, not free text: "Short Form" / "shortform" / "short-form"
+  would otherwise be three categories and brand search would find none of them.
+  Anyone may propose one — usable immediately, publicly listable after an admin
+  approves. A creator may hold at most `Category::MAX_PER_CREATOR` (3).
+- Signup no longer requires a role; roles are applied for afterwards at
+  `/roles`, and one person may hold creator + editor + brand.
 - Rejected webhooks are logged under a throwaway id so a forged event cannot
   occupy the unique `provider_event_id` slot and suppress the genuine delivery.
 

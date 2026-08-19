@@ -259,6 +259,15 @@ label { font-size: 0.86rem; font-weight: 600; }
 input, textarea, select { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); color: var(--ink); font: inherit; }
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 textarea { min-height: 120px; resize: vertical; }
+/* Category chips: a checkbox that reads as a tag. */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-elev); cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+.chip:hover { border-color: var(--accent); }
+.chip input { width: auto; min-height: 0; margin: 0; }
+.chip:has(input:checked) { background: var(--ink); border-color: var(--ink); color: var(--accent-ink); }
+.chip em { font-style: normal; font-size: 0.72rem; }
+.chip:has(input:checked) em { color: var(--accent-ink); opacity: 0.75; }
+
 .hp { position: absolute; left: -9999px; }
 .flash { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok-line); padding: 12px 14px; border-radius: 12px; }
 .error { color: var(--danger); font-size: 0.9rem; }

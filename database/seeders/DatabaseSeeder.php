@@ -2,17 +2,25 @@
 
 namespace Database\Seeders;
 
+use App\Models\BlogPost;
+use App\Models\Campaign;
+use App\Models\Category;
 use App\Models\CmsPage;
+use App\Models\CommissionRule;
 use App\Models\ContactFormVersion;
 use App\Models\Faq;
+use App\Models\FeaturedCreator;
 use App\Models\HomepageSection;
 use App\Models\ManagementPlan;
 use App\Models\Role;
 use App\Models\SocialPlatform;
+use App\Models\Testimonial;
 use App\Models\User;
 use App\Services\Creator\CreatorOnboardingService;
+use App\Services\Identity\AccountProvisioner;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -48,6 +56,35 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        // Starting taxonomy. Anyone may propose more; these are the approved list
+        // brands filter against on day one.
+        $categories = [
+            'creator' => [
+                'Fashion & Style', 'Beauty & Skincare', 'Food & Cooking', 'Travel',
+                'Fitness & Health', 'Technology', 'Gaming', 'Comedy & Entertainment',
+                'Education', 'Finance & Business', 'Lifestyle & Vlogs', 'Music & Dance',
+                'Parenting & Family', 'Automotive', 'Art & Design',
+            ],
+            'editor' => [
+                'Short-form / Reels', 'Long-form YouTube', 'Documentary', 'Wedding Films',
+                'Corporate & Brand Films', 'Music Videos', 'Podcast Editing', 'Gaming Montage',
+                'Motion Graphics', 'Colour Grading', 'Sound Design', 'Subtitles & Captions',
+            ],
+            'brand' => [
+                'FMCG', 'Fashion & Apparel', 'Beauty & Personal Care', 'Technology & Electronics',
+                'Food & Beverage', 'Travel & Hospitality', 'Health & Wellness', 'Finance & Fintech',
+                'Education & EdTech', 'Automotive', 'Real Estate', 'Entertainment & Media',
+            ],
+        ];
+        foreach ($categories as $type => $names) {
+            foreach ($names as $index => $name) {
+                Category::query()->updateOrCreate(
+                    ['type' => $type, 'slug' => Str::slug($name)],
+                    ['name' => $name, 'status' => 'approved', 'sort_order' => $index],
+                );
+            }
+        }
+
         HomepageSection::query()->updateOrCreate(['key' => 'hero'], [
             'title' => 'The production desk for creators, brands and editors',
             'subtitle' => 'Discover talent, negotiate in the open, invoice properly, and settle through a real payment provider.',
@@ -56,7 +93,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         foreach ([
-            ['how-it-works', 'How it works', "Publish a verified profile. Brands inquire without an account. Negotiate, agree, and invoice. Provider webhooks confirm money. Deliver, approve, and settle."],
+            ['how-it-works', 'How it works', 'Publish a verified profile. Brands inquire without an account. Negotiate, agree, and invoice. Provider webhooks confirm money. Deliver, approve, and settle.'],
             ['for-creators', 'For creators', 'Publish a public media kit, receive brand inquiries without forcing registration, and keep Instagram insights official.'],
             ['for-editors', 'For editors', 'Apply, get verified, then run projects with files, revision limits, and a real invoice path.'],
             ['for-brands', 'For brands', 'Verify the company, publish campaigns, compare applicants, and settle only after a signed provider webhook.'],
@@ -107,19 +144,19 @@ class DatabaseSeeder extends Seeder
             'is_published' => true,
         ]);
 
-        \App\Models\Testimonial::query()->updateOrCreate(['author_name' => 'Mursalim'], [
+        Testimonial::query()->updateOrCreate(['author_name' => 'Mursalim'], [
             'author_role' => 'Creator',
             'quote' => 'The public page is the media kit. Brands write in without creating an account.',
             'sort_order' => 1,
             'is_published' => true,
         ]);
-        \App\Models\Testimonial::query()->updateOrCreate(['author_name' => 'Asha'], [
+        Testimonial::query()->updateOrCreate(['author_name' => 'Asha'], [
             'author_role' => 'Editor',
             'quote' => 'Revisions and files live on the project, not in a private chat dump.',
             'sort_order' => 2,
             'is_published' => true,
         ]);
-        \App\Models\Testimonial::query()->updateOrCreate(['author_name' => 'ABC Brand'], [
+        Testimonial::query()->updateOrCreate(['author_name' => 'ABC Brand'], [
             'author_role' => 'Brand',
             'quote' => 'Campaign applications come with a real profile, not a screenshot of insights.',
             'sort_order' => 3,
@@ -197,12 +234,12 @@ class DatabaseSeeder extends Seeder
             'status' => 'published',
         ]);
         ContactFormVersion::query()->where('contact_form_id', $page->contactForm->id)->update(['published_at' => now()]);
-        \App\Models\FeaturedCreator::query()->updateOrCreate(
+        FeaturedCreator::query()->updateOrCreate(
             ['creator_profile_id' => $profile->id],
             ['priority' => 100, 'is_active' => true],
         );
 
-        $provisioner = app(\App\Services\Identity\AccountProvisioner::class);
+        $provisioner = app(AccountProvisioner::class);
 
         $editorUser = User::query()->firstOrCreate(
             ['email' => 'editor@vidlix.test'],
@@ -247,7 +284,7 @@ class DatabaseSeeder extends Seeder
             'website' => 'https://example.com',
         ]);
 
-        \App\Models\Campaign::query()->updateOrCreate(
+        Campaign::query()->updateOrCreate(
             ['slug' => 'summer-reels'],
             [
                 'brand_profile_id' => $brandUser->brandProfile->id,
@@ -260,8 +297,8 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        \App\Models\CommissionRule::query()->updateOrCreate(['slug' => 'platform'], ['bps' => 1000, 'is_active' => true]);
-        \App\Models\BlogPost::query()->updateOrCreate(['slug' => 'welcome'], [
+        CommissionRule::query()->updateOrCreate(['slug' => 'platform'], ['bps' => 1000, 'is_active' => true]);
+        BlogPost::query()->updateOrCreate(['slug' => 'welcome'], [
             'title' => 'Welcome to the desk',
             'body' => 'Vidlix is live on real Laravel state. Payments stay pending until a provider webhook confirms them.',
             'status' => 'published',

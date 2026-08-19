@@ -7,6 +7,7 @@ use App\Http\Controllers\App\InboxController;
 use App\Http\Controllers\App\InstagramController;
 use App\Http\Controllers\App\ProjectFileController;
 use App\Http\Controllers\App\PublicPageStudioController;
+use App\Http\Controllers\App\RoleApplicationController;
 use App\Http\Controllers\App\WorkspaceController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
@@ -76,6 +77,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/creator/public-page/publish', [PublicPageStudioController::class, 'publish'])->name('creator.public-page.publish');
         Route::post('/creator/public-page/social', [PublicPageStudioController::class, 'addSocial'])->name('creator.public-page.social');
         Route::post('/creator/public-page/form', [PublicPageStudioController::class, 'saveForm'])->name('creator.public-page.form');
+
+        Route::get('/roles', [RoleApplicationController::class, 'index'])->name('app.roles');
+        Route::post('/roles/apply', [RoleApplicationController::class, 'apply'])->name('app.roles.apply');
+        Route::post('/roles/creator-categories', [RoleApplicationController::class, 'saveCreatorCategories'])->name('app.roles.creator-categories');
 
         Route::get('/editor', [WorkspaceController::class, 'editors'])->name('app.editors');
         Route::post('/editor/apply', [WorkspaceController::class, 'applyEditor'])->name('app.editors.apply');

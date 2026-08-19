@@ -14,6 +14,7 @@
             <a href="{{ route('app.automations') }}">{{ __('Automation') }}</a>
             <a href="{{ route('app.managers') }}">{{ __('Management') }}</a>
         @endif
+        <a class="{{ request()->routeIs('app.roles') ? 'active' : '' }}" href="{{ route('app.roles') }}">{{ __('Roles & categories') }}</a>
         <a href="{{ route('app.editors') }}">{{ __('Editor') }}</a>
         <a href="{{ route('app.brand') }}">{{ __('Brand') }}</a>
         <a href="{{ route('app.campaigns') }}">{{ __('Campaigns') }}</a>

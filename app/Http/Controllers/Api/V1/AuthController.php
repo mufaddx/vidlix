@@ -25,9 +25,12 @@ class AuthController extends Controller
             'password' => $request->string('password'),
             'status' => 'active',
         ]);
-        $role = Role::query()->where('slug', $request->string('role'))->firstOrFail();
-        $user->roles()->attach($role);
-        $onboarding->provisionRole($user, $role->slug);
+        $requested = $request->string('role')->toString();
+        if ($requested !== '') {
+            $role = Role::query()->where('slug', $requested)->firstOrFail();
+            $user->roles()->attach($role);
+            $onboarding->provisionRole($user, $role->slug);
+        }
         event(new Registered($user));
 
         return response()->json([
