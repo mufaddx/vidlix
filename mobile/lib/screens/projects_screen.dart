@@ -90,6 +90,53 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     });
   }
 
+  /// What this project may move to next.
+  ///
+  /// The list is the server's, sent with the project, rather than a copy of
+  /// the state machine kept here: two copies drift, and the phone's would be
+  /// the stale one. An empty list means nothing is this side's to do.
+  List<String> get _nextStates {
+    final next = data['next_states'];
+
+    return next is List ? next.map((s) => '$s').toList() : const [];
+  }
+
+  Future<void> _transition(String to) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Move to ${to.replaceAll('_', ' ')}?'),
+        content: const Text('This changes the project for both sides.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Move')),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => loading = true);
+    final res = await widget.api.post(
+      '/projects/${widget.projectId}/transition',
+      {'status': to},
+      auth: true,
+    );
+
+    if (!mounted) return;
+
+    if (res['success'] == true) {
+      await _load();
+      return;
+    }
+
+    setState(() => loading = false);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('${res['message'] ?? 'The server refused that change.'}'),
+    ));
+  }
+
   /// Payment state is whatever the server says. Opening a checkout link, or
   /// coming back from one, never changes it here.
   String _paymentLine(Map payment) {
@@ -121,6 +168,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   Text('Status: ${project['status'] ?? ''}'),
                   Text('Total: ${Api.money(project['total_amount_minor'])}'),
                   if (project['deadline'] != null) Text('Deadline: ${project['deadline']}'),
+                  if (_nextStates.isNotEmpty) ...[
+                    const SectionTitle('Move this on'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _nextStates
+                          .map((to) => OutlinedButton(
+                                onPressed: () => _transition(to),
+                                child: Text(to.replaceAll('_', ' ')),
+                              ))
+                          .toList(),
+                    ),
+                  ],
                   const SectionTitle('Payments'),
                   if (payments.isEmpty)
                     const NoticeCard('No payment has been requested for this project.')

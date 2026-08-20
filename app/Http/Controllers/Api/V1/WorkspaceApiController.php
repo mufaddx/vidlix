@@ -48,6 +48,8 @@ class WorkspaceApiController extends Controller
 
         return $this->ok($request, [
             'project' => $project,
+            // Sent so the app never keeps its own copy of the state machine.
+            'next_states' => MarketplaceEngine::projectTransitions()[$project->status] ?? [],
             'files' => $project->files()->latest()->get(),
             'revisions' => $project->revisions()->latest()->get(),
             'payments' => Payment::query()

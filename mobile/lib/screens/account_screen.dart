@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api.dart';
+import '../push.dart';
 import '../theme.dart';
 import 'campaigns_screen.dart';
 import 'earnings_screen.dart';
@@ -22,6 +23,8 @@ class _AccountScreenState extends State<AccountScreen> {
   List applications = [];
   List invoices = [];
   bool loading = true;
+  bool registering = false;
+  String? pushState;
 
   @override
   void initState() {
@@ -44,6 +47,41 @@ class _AccountScreenState extends State<AccountScreen> {
       applications = Api.listOf(appRes);
       invoices = Api.listOf(invRes);
       loading = false;
+    });
+  }
+
+  Widget _pushSection() {
+    final state = pushState;
+
+    final line = switch (state) {
+      'registered' => 'This device is registered for notifications.',
+      'registered_no_provider' =>
+        'This device is registered, but the server has no push provider configured, so nothing is delivered yet.',
+      'no_token_provider' || 'no_device_token' =>
+        'No device token is available in this build, so this device is not registered. Notifications still appear in the app.',
+      'rejected' => 'The server would not register this device.',
+      _ => 'Not registered yet.',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        NoticeCard(line),
+        OutlinedButton(
+          onPressed: registering ? null : _registerDevice,
+          child: Text(registering ? 'Registering…' : 'Register this device'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _registerDevice() async {
+    setState(() => registering = true);
+    final result = await PushRegistration(widget.api).register();
+    if (!mounted) return;
+    setState(() {
+      registering = false;
+      pushState = result;
     });
   }
 
@@ -136,6 +174,8 @@ class _AccountScreenState extends State<AccountScreen> {
               )),
             ),
           ),
+          const SectionTitle('Notifications'),
+          _pushSection(),
           const SectionTitle('Instagram'),
           _instagramSection(),
           const SectionTitle('Management'),

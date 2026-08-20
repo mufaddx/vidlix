@@ -184,9 +184,18 @@ class MarketplaceEngine
         return $project;
     }
 
-    public function transitionProject(Project $project, string $to): void
+    /**
+     * The one description of what a project may do next.
+     *
+     * Both transitionProject() and the API read this, so a client never has to
+     * keep its own copy of the state machine - a copy that would be the stale
+     * one the moment a stage changed.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function projectTransitions(): array
     {
-        $map = [
+        return [
             'draft' => ['proposal_sent'],
             'proposal_sent' => ['awaiting_advance'],
             'awaiting_advance' => ['advance_paid'],
@@ -201,6 +210,11 @@ class MarketplaceEngine
             'client_approved' => ['settlement_pending'],
             'settlement_pending' => ['completed'],
         ];
+    }
+
+    public function transitionProject(Project $project, string $to): void
+    {
+        $map = self::projectTransitions();
         if (! in_array($to, $map[$project->status] ?? [], true)) {
             throw ValidationException::withMessages(['status' => __('Illegal project transition from '.$project->status)]);
         }

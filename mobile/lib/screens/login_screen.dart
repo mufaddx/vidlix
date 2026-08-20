@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../config.dart';
 import '../theme.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.api, required this.onAuthed});
@@ -56,6 +57,23 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<void> _openSignup() async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SignupScreen(
+        api: widget.api,
+        onRegistered: (email) {
+          // Registration returns no token on purpose, so the person lands back
+          // here and signs in - one place decides what a valid session is.
+          login.text = email;
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account created. Sign in to continue.')),
+          );
+        },
+      ),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +107,12 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: busy ? null : _submit,
               child: Text(busy ? 'Signing in…' : 'Log in'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: busy ? null : _openSignup,
+              child: const Text('New to Vidlix? Create an account'),
+            ),
+            const SizedBox(height: 8),
             Text(
               'Signs in against ${Config.apiBase}/api/v1 — the same backend as the website. '
               'The phone never talks to MySQL.',
