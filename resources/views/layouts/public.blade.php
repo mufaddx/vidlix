@@ -16,7 +16,7 @@
     <header class="site-header">
         <div class="wrap nav" id="site-nav">
             <a class="brand" href="{{ route('home') }}">{{ config('app.name') }}</a>
-            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" data-nav-toggle>{{ __('Menu') }}</button>
+            @include('partials.nav-toggle', ['controls' => 'primary-nav'])
             <nav class="nav-links" id="primary-nav" aria-label="{{ __('Primary') }}">
                 <a href="{{ route('creators.index') }}">{{ __('Creators') }}</a>
                 <a href="{{ route('editors.index') }}">{{ __('Editors') }}</a>
@@ -39,15 +39,6 @@
         @yield('content')
     </main>
     @include('partials.public-footer')
-    <script>
-        const nav = document.getElementById('site-nav');
-        const toggle = document.querySelector('[data-nav-toggle]');
-        if (nav && toggle) {
-            toggle.addEventListener('click', () => {
-                const open = nav.classList.toggle('is-open');
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            });
-        }
-    </script>
+    <script src="{{ \App\Support\Asset::url('js/site.js') }}" defer></script>
 </body>
 </html>

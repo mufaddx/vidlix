@@ -17,7 +17,7 @@
             <a class="brand" href="{{ route('dashboard') }}">{{ config('app.name') }}</a>
             <span class="spacer"></span>
             @include('partials.theme-toggle')
-            <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>{{ __('Menu') }}</button>
+            @include('partials.nav-toggle')
         </header>
         @include('partials.app-sidebar')
         <div class="workspace">
@@ -33,15 +33,6 @@
             @include('partials.public-footer')
         </div>
     </div>
-    <script>
-        const shell = document.getElementById('app-shell');
-        const toggle = document.querySelector('[data-nav-toggle]');
-        if (shell && toggle) {
-            toggle.addEventListener('click', () => {
-                const open = shell.classList.toggle('is-open');
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            });
-        }
-    </script>
+    <script src="{{ \App\Support\Asset::url('js/site.js') }}" defer></script>
 </body>
 </html>

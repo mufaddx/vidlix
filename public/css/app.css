@@ -151,7 +151,14 @@ img { max-width: 100%; }
 .wrap { width: min(1180px, calc(100% - 40px)); margin-inline: auto; }
 .site-header { position: sticky; top: 0; z-index: 30; background: var(--header-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; }
-.nav-toggle { display: none; margin-left: auto; border: 1px solid var(--line); background: var(--bg-elev); color: var(--ink); border-radius: 999px; min-height: 44px; padding: 0 16px; font: inherit; font-weight: 600; cursor: pointer; }
+.nav-toggle {
+  display: none; margin-left: auto; align-items: center; justify-content: center;
+  width: 44px; height: 44px; min-height: 44px; padding: 0;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--bg-elev); color: var(--ink); cursor: pointer;
+}
+.nav-toggle svg { width: 20px; height: 20px; fill: currentColor; }
+.nav-toggle[aria-expanded="true"] { background: var(--ink); color: var(--bg-elev); border-color: var(--ink); }
 .brand { font-weight: 750; letter-spacing: -0.03em; font-size: 1.3rem; }
 .nav-links { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; color: var(--muted); font-size: 0.92rem; font-weight: 500; }
 .nav-links a { min-height: 44px; display: inline-flex; align-items: center; }
@@ -439,13 +446,17 @@ textarea { min-height: 120px; resize: vertical; }
   .hero-actions .btn { width: 100%; }
   .section-head { flex-direction: column; align-items: flex-start; }
   .cta-band { padding: 36px 0; border-block: 1px solid var(--line); }
-  .nav-links a {
+  /* :not(.btn) matters. This rule is one point more specific than .btn, so it
+     was replacing the Join button's indigo background while .btn kept setting
+     white text - a white label on a white pill, invisible. */
+  .nav-links a:not(.btn) {
     border: 1px solid var(--line);
     border-radius: 12px;
     padding: 0 14px;
     background: var(--bg-elev);
     justify-content: center;
   }
+  .nav-links .btn { width: 100%; justify-content: center; }
   /* The toggle stays a circle in the mobile nav rather than stretching. */
   .nav-links .theme-toggle { width: 44px; align-self: flex-start; border-radius: 999px; }
   .side a { border: 1px solid var(--line); background: var(--bg-elev); margin-bottom: 6px; }
@@ -454,17 +465,26 @@ textarea { min-height: 120px; resize: vertical; }
   .app-top .spacer { margin-left: auto; }
   .side { display: none; border-right: 0; border-bottom: 1px solid var(--line); }
   .app-shell.is-open .side { display: block; }
-  .nav-toggle { display: inline-flex; align-items: center; }
-  .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 8px; }
-  .nav.is-open .nav-links { display: flex; }
+  .nav-toggle { display: inline-flex; }
+  .nav-links {
+    display: flex; width: 100%; flex-direction: column; align-items: stretch; gap: 8px;
+    max-height: 0; opacity: 0; visibility: hidden; overflow: hidden;
+    transition: max-height 260ms ease, opacity 180ms ease, visibility 0s linear 260ms;
+  }
+  .nav.is-open .nav-links {
+    max-height: 75vh; opacity: 1; visibility: visible; overflow-y: auto;
+    padding-top: 10px;
+    transition: max-height 260ms ease, opacity 180ms ease, visibility 0s;
+  }
   .search { flex-direction: column; border-radius: 18px; }
   .main { padding: 16px 16px 32px; }
 }
 @media (max-width: 520px) {
   .grid, .grid-4, .trust { grid-template-columns: 1fr; }
-  .role-strip, .footer-grid, .hero-actions { grid-template-columns: 1fr 1fr; }
+  .role-strip, .footer-grid { grid-template-columns: 1fr 1fr; }
+  .hero-actions { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  body, .btn, .card, .theme-toggle { transition: none; }
+  body, .btn, .card, .theme-toggle, .nav-links { transition: none; }
 }

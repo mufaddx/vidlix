@@ -1,6 +1,6 @@
 {{-- Theme bootstrap. Must stay inline and in <head>: it runs before first paint,
      so a returning visitor never sees a flash of the wrong theme. --}}
-<script>
+<script nonce="{{ \App\Support\Csp::nonce() }}">
 (function () {
     var KEY = 'vidlix-theme';
     var root = document.documentElement;
