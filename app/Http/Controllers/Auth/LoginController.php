@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Models\LoginAttempt;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Auth\TwoFactorService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function store(LoginRequest $request, AuditLogger $audit): RedirectResponse
+    public function store(LoginRequest $request, AuditLogger $audit, TwoFactorService $twoFactor): RedirectResponse
     {
         $login = $request->string('login')->toString();
         $user = User::query()
@@ -42,6 +43,17 @@ class LoginController extends Controller
             throw ValidationException::withMessages([
                 'login' => __('These credentials do not match our records.'),
             ]);
+        }
+
+        // A confirmed second factor stands between the password and a session.
+        // The user is held in the session by id only - nothing is logged in
+        // until the code checks out.
+        if ($twoFactor->isEnabled($user)) {
+            $request->session()->put(TwoFactorController::PENDING_KEY, $user->id);
+            $request->session()->put('auth.two_factor_remember', $request->boolean('remember'));
+            $audit->record('auth.two_factor_required', $user, [], $user->id);
+
+            return redirect()->route('two-factor.challenge');
         }
 
         Auth::login($user, $request->boolean('remember'));

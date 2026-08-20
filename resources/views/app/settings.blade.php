@@ -7,6 +7,9 @@
 @endforeach
 <p class="muted">{{ __('High-risk payout/Instagram disconnect remains creator-only.') }}</p>
 
+<h2>{{ __('Security') }}</h2>
+<p><a href="{{ route('app.two-factor') }}">{{ __('Two-factor authentication') }}</a></p>
+
 <h2>{{ __('Your data') }}</h2>
 <p><a href="{{ route('app.privacy') }}">{{ __('Download a copy of your data, or close your account') }}</a></p>
 @endsection

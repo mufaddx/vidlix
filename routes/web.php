@@ -22,6 +22,7 @@ use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetFlowController;
 use App\Http\Controllers\Auth\SignupFlowController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Managers\ManagerInvitationController;
 use App\Http\Controllers\Site\CreatorPublicController;
 use App\Http\Controllers\Site\EditorPublicController;
@@ -55,6 +56,8 @@ Route::middleware('guest')->group(function () {
      | The middle step is a real emailed code, so these endpoints are throttled
      | as tightly as the login form.
      */
+    Route::get('/two-factor', [TwoFactorController::class, 'challenge'])->name('two-factor.challenge');
+    Route::post('/two-factor', [TwoFactorController::class, 'verify'])->middleware('throttle:6,1')->name('two-factor.verify');
     Route::get('/register', [SignupFlowController::class, 'create'])->name('register')->middleware('feature:public_signup');
     Route::post('/register/start', [SignupFlowController::class, 'start'])->middleware('throttle:register')->name('register.start');
     Route::post('/register/verify', [SignupFlowController::class, 'verify'])->middleware('throttle:otp')->name('register.verify');
@@ -176,6 +179,11 @@ Route::middleware('auth')->group(function () {
 
         // Your own data, and the door out. Deletion is throttled and asks for
         // the password again, because it cannot be undone.
+        Route::get('/settings/two-factor', [TwoFactorController::class, 'settings'])->name('app.two-factor');
+        Route::post('/settings/two-factor/begin', [TwoFactorController::class, 'begin'])->name('app.two-factor.begin');
+        Route::post('/settings/two-factor/confirm', [TwoFactorController::class, 'confirm'])->name('app.two-factor.confirm');
+        Route::post('/settings/two-factor/recovery', [TwoFactorController::class, 'regenerate'])->name('app.two-factor.recovery');
+        Route::delete('/settings/two-factor', [TwoFactorController::class, 'disable'])->name('app.two-factor.disable');
         Route::get('/settings/privacy', [PrivacyController::class, 'show'])->name('app.privacy');
         Route::get('/settings/privacy/export', [PrivacyController::class, 'export'])->middleware('throttle:6,1')->name('app.privacy.export');
         Route::delete('/settings/privacy', [PrivacyController::class, 'destroy'])->middleware('throttle:3,60')->name('app.privacy.destroy');
