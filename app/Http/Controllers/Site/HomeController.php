@@ -35,9 +35,19 @@ class HomeController extends Controller
         $openCampaigns = Campaign::query()->where('status', 'published')->latest()->limit(4)->get();
         $plans = ManagementPlan::query()->where('is_active', true)->get();
 
+        // Counted, not claimed. A landing page that invents its numbers is the
+        // same lie as a dashboard that invents a balance, so these are real
+        // rows and a small site is allowed to look small.
+        $counts = [
+            'creators' => CreatorProfile::query()->where('visibility', 'public')->count(),
+            'editors' => EditorProfile::query()->where('application_status', 'approved')->count(),
+            'brands' => BrandProfile::query()->where('verification_status', 'verified')->count(),
+            'campaigns' => Campaign::query()->where('status', 'published')->count(),
+        ];
+
         return view('public.home', compact(
             'sections', 'faqs', 'testimonials', 'featured',
-            'topCreators', 'topEditors', 'topBrands', 'openCampaigns', 'plans'
+            'topCreators', 'topEditors', 'topBrands', 'openCampaigns', 'plans', 'counts'
         ));
     }
 

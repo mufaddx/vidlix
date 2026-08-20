@@ -57,6 +57,53 @@
     </div>
 </section>
 
+<section class="wrap section stats-band">
+    {{-- Counted from the database, never claimed. A small site is allowed to
+         look small; inventing a number here would be the same lie as inventing
+         a wallet balance. --}}
+    <div class="stats-row">
+        <div class="stat-cell">
+            <span class="stat-figure">{{ number_format($counts['creators']) }}</span>
+            <span class="stat-label">{{ trans_choice('published creator|published creators', $counts['creators']) }}</span>
+        </div>
+        <div class="stat-cell">
+            <span class="stat-figure">{{ number_format($counts['editors']) }}</span>
+            <span class="stat-label">{{ trans_choice('approved editor|approved editors', $counts['editors']) }}</span>
+        </div>
+        <div class="stat-cell">
+            <span class="stat-figure">{{ number_format($counts['brands']) }}</span>
+            <span class="stat-label">{{ trans_choice('verified brand|verified brands', $counts['brands']) }}</span>
+        </div>
+        <div class="stat-cell">
+            <span class="stat-figure">{{ number_format($counts['campaigns']) }}</span>
+            <span class="stat-label">{{ trans_choice('open campaign|open campaigns', $counts['campaigns']) }}</span>
+        </div>
+    </div>
+</section>
+
+<section class="wrap section" id="money">
+    <div class="section-head">
+        <div>
+            <p class="kicker">{{ __('Trust') }}</p>
+            <h2>{{ __('How the money works') }}</h2>
+        </div>
+    </div>
+    <div class="grid">
+        <article class="card">
+            <h3>{{ __('Nothing is paid until a provider says so') }}</h3>
+            <p class="muted">{{ __('A payment shows as confirmed only when the payment provider tells us it was, through a signed webhook. There is no button anywhere that marks money received.') }}</p>
+        </article>
+        <article class="card">
+            <h3>{{ __('The ledger is the record') }}</h3>
+            <p class="muted">{{ __('Every rupee lands in an append-only ledger. Balances you see are added up from it, never stored and edited.') }}</p>
+        </article>
+        <article class="card">
+            <h3>{{ __('Invoices for both sides') }}</h3>
+            <p class="muted">{{ __('Each settled piece of work produces a real invoice PDF for the payer and the payee, with GST fields where they apply.') }}</p>
+        </article>
+    </div>
+</section>
+
 <section class="wrap section" id="how-it-works">
     <div class="section-head">
         <div>
