@@ -35,6 +35,8 @@
                         @error($field['key'])<span class="error">{{ $message }}</span>@enderror
                     </label>
                 @endforeach
+                @include('partials.turnstile')
+
                 <button class="btn" type="submit">{{ __('Send inquiry') }}</button>
             </form>
         @endif

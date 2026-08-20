@@ -52,6 +52,8 @@
                     <label class="hp" for="{{ $honeypot }}">{{ __('Leave this empty') }}</label>
                     <input class="hp" id="{{ $honeypot }}" name="{{ $honeypot }}" tabindex="-1" autocomplete="off">
 
+                    @include('partials.turnstile')
+
                     <button class="btn" type="submit">{{ __('Send enquiry') }}</button>
                 </form>
                 <p class="muted">{{ __('No account needed. Your message goes to their Vidlix inbox, and their reply reaches you by email.') }}</p>

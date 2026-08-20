@@ -38,7 +38,7 @@ Route::get('/editors/{username}', [EditorPublicController::class, 'show'])->name
 // matches /creators. Both resolve so a printed or pasted link never dead-ends.
 Route::get('/editor/{username}', fn (string $username) => redirect()->route('editors.public', $username));
 Route::post('/editors/{username}/enquire', [EditorPublicController::class, 'enquire'])
-    ->middleware(['throttle:public-form', 'feature:public_enquiries'])
+    ->middleware(['throttle:public-form', 'feature:public_enquiries', 'turnstile'])
     ->name('editors.enquire');
 Route::get('/brands', [HomeController::class, 'brands'])->name('brands.index');
 Route::get('/brands/{slug}', [HomeController::class, 'brandShow'])->name('brands.public');
@@ -48,7 +48,7 @@ Route::get('/blog/{slug}', [HomeController::class, 'post'])->name('blog.show');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/p/{slug}', [HomeController::class, 'page'])->name('pages.show');
 Route::get('/u/{username}', [CreatorPublicController::class, 'show'])->name('creators.public');
-Route::post('/u/{username}/inquire', [CreatorPublicController::class, 'inquire'])->middleware(['throttle:public-form', 'feature:public_enquiries'])->name('creators.inquire');
+Route::post('/u/{username}/inquire', [CreatorPublicController::class, 'inquire'])->middleware(['throttle:public-form', 'feature:public_enquiries', 'turnstile'])->name('creators.inquire');
 
 Route::middleware('guest')->group(function () {
     /*

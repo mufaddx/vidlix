@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureFeature;
 use App\Http\Middleware\EnsureWorkspace;
 use App\Http\Middleware\MaintenanceGate;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\VerifyTurnstile;
 use App\Support\RequestId;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureAdmin::class,
             'workspace' => EnsureWorkspace::class,
             'feature' => EnsureFeature::class,
+            'turnstile' => VerifyTurnstile::class,
         ]);
         /*
          | The admin panel is a separate front door. A guest who opens an admin
