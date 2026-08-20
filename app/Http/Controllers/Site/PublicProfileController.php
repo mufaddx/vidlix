@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\CreatorProfile;
 use App\Models\EditorProfile;
 use App\Models\Username;
-use App\Services\Creator\PublicEnquiryService;
-use App\Services\Creator\PublicInquiryService;
+use App\Services\Forms\ContactFormBuilder;
+use App\Services\Forms\PublicInquiries;
 use App\Services\Identity\UsernameRegistry;
 use App\Services\Taxonomy\CategoryService;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +28,10 @@ use Illuminate\View\View;
  */
 class PublicProfileController extends Controller
 {
-    public function __construct(private UsernameRegistry $registry) {}
+    public function __construct(
+        private UsernameRegistry $registry,
+        private ContactFormBuilder $forms,
+    ) {}
 
     public function show(string $username, CategoryService $categories): View|RedirectResponse
     {
@@ -83,12 +86,8 @@ class PublicProfileController extends Controller
         ]);
     }
 
-    public function submit(
-        string $username,
-        Request $request,
-        PublicInquiryService $inquiries,
-        PublicEnquiryService $enquiries,
-    ): RedirectResponse {
+    public function submit(string $username, Request $request, PublicInquiries $inquiries): RedirectResponse
+    {
         $canonical = $this->registry->normalise($username);
         $profile = $this->registry->resolveProfile($canonical);
 
@@ -104,11 +103,7 @@ class PublicProfileController extends Controller
          | form that carries its own owner id is a form anyone can retarget at
          | somebody else's inbox.
          */
-        if ($profile instanceof CreatorProfile) {
-            $inquiries->submit($profile, $request->all(), $request->ip());
-        } else {
-            $enquiries->submit($profile, 'editor', $request->all(), $request->ip());
-        }
+        $inquiries->submit($profile, $this->scopeOf($profile), $request->all(), $request->ip());
 
         return back()->with('inquiry_sent', true)
             ->with('status', __('Your message was sent. :name will reply from Vidlix.', [
@@ -125,7 +120,7 @@ class PublicProfileController extends Controller
         return view('public.creator', [
             'creator' => $creator,
             'page' => $creator->publicPage->published_payload,
-            'form' => $creator->publicPage->contactForm?->publishedVersion()?->schema_json ?? [],
+            'form' => $this->formSchema($creator),
             'links' => $creator->socialLinks->where('is_visible', true),
             'honeypot' => config('vidlix.public_form_honeypot'),
         ]);
@@ -138,6 +133,7 @@ class PublicProfileController extends Controller
         return view('public.editor', [
             'editor' => $editor,
             'categories' => $categories->forProfile($editor),
+            'form' => $this->formSchema($editor),
             'honeypot' => config('vidlix.public_form_honeypot'),
         ]);
     }
@@ -167,27 +163,46 @@ class PublicProfileController extends Controller
         abort(404);
     }
 
+    private function scopeOf(Model $profile): string
+    {
+        return $profile instanceof CreatorProfile ? 'creator' : 'editor';
+    }
+
+    /**
+     * Whether this profile is taking messages at all.
+     *
+     * Both halves have to agree: the owner's form must be on and published, and
+     * an editor must not have switched enquiries off on their profile.
+     */
     private function acceptsInquiries(Model $profile): bool
     {
-        if ($profile instanceof CreatorProfile) {
-            return $profile->publicPage?->contactForm?->publishedVersion() !== null;
+        $owner = $profile->user;
+
+        if ($owner === null) {
+            return false;
         }
 
-        if ($profile instanceof EditorProfile) {
-            return (bool) $profile->accepts_inquiries;
+        if ($profile instanceof EditorProfile && ! $profile->accepts_inquiries) {
+            return false;
         }
 
-        return false;
+        $form = $this->forms->formFor($owner, $this->scopeOf($profile));
+
+        return $this->forms->publishedVersion($form) !== null;
     }
 
     /** @return array<string, mixed> */
     private function formSchema(Model $profile): array
     {
-        if ($profile instanceof CreatorProfile) {
-            return $profile->publicPage?->contactForm?->publishedVersion()?->schema_json ?? [];
+        $owner = $profile->user;
+
+        if ($owner === null) {
+            return [];
         }
 
-        return [];
+        $form = $this->forms->formFor($owner, $this->scopeOf($profile));
+
+        return $this->forms->publishedVersion($form)?->schema_json ?? [];
     }
 
     /**

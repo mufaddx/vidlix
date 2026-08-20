@@ -202,3 +202,66 @@
         flash(button, fallbackCopy(text) ? 'Copied' : 'Press Ctrl+C');
     });
 })();
+
+/*
+ * Conditional form fields — the "Other → please specify" case.
+ *
+ * A field carrying data-visible-when appears only while the field it names
+ * holds data-visible-value. This is presentation only: the server evaluates the
+ * same condition on submit and discards answers to fields that were not
+ * actually shown, so nothing here is a security check.
+ *
+ * required is toggled alongside visibility, because a hidden required field
+ * blocks submission with a validation message the visitor cannot see or reach.
+ */
+(function () {
+    function valueOf(name) {
+        var inputs = document.querySelectorAll('[data-field="' + name + '"]');
+
+        for (var i = 0; i < inputs.length; i++) {
+            var input = inputs[i];
+
+            if (input.type === 'radio' || input.type === 'checkbox') {
+                if (input.checked) {
+                    return input.type === 'checkbox' ? '1' : input.value;
+                }
+                continue;
+            }
+
+            return input.value;
+        }
+
+        return '';
+    }
+
+    function sync() {
+        var conditionals = document.querySelectorAll('[data-visible-when]');
+
+        for (var i = 0; i < conditionals.length; i++) {
+            var wrapper = conditionals[i];
+            var show = valueOf(wrapper.getAttribute('data-visible-when'))
+                === wrapper.getAttribute('data-visible-value');
+
+            wrapper.hidden = !show;
+
+            var input = wrapper.querySelector('input, select, textarea');
+
+            if (input) {
+                if (show) {
+                    if (input.getAttribute('data-was-required') === '1') {
+                        input.required = true;
+                    }
+                } else {
+                    if (input.required) {
+                        input.setAttribute('data-was-required', '1');
+                    }
+                    input.required = false;
+                }
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', sync);
+    document.addEventListener('change', sync);
+    document.addEventListener('input', sync);
+})();

@@ -38,33 +38,21 @@
         </div>
 
         <div class="hero-card">
-            <h2>{{ __('Get in touch') }}</h2>
+            <h2>{{ $form['title'] ?? __('Get in touch') }}</h2>
+                @if(!empty($form['description']))<p class="muted">{{ $form['description'] }}</p>@endif
             @if(session('status'))<p class="flash">{{ session('status') }}</p>@endif
             @if($errors->any())<p class="error">{{ $errors->first() }}</p>@endif
 
             @if($editor->accepts_inquiries)
                 <form class="form" method="post" action="{{ route('profile.contact.submit', $editor->username) }}">@csrf
-                    <label for="name">{{ __('Your name') }}</label>
-                    <input id="name" name="name" required>
-
-                    <label for="email">{{ __('Your email') }}</label>
-                    <input id="email" name="email" type="email" required>
-
-                    <label for="company">{{ __('Company (optional)') }}</label>
-                    <input id="company" name="company">
-
-                    <label for="subject">{{ __('Subject') }}</label>
-                    <input id="subject" name="subject" required>
-
-                    <label for="message">{{ __('What do you need edited?') }}</label>
-                    <textarea id="message" name="message" required></textarea>
+                    @include('partials.inquiry-fields')
 
                     <label class="hp" for="{{ $honeypot }}">{{ __('Leave this empty') }}</label>
                     <input class="hp" id="{{ $honeypot }}" name="{{ $honeypot }}" tabindex="-1" autocomplete="off">
 
                     @include('partials.turnstile')
 
-                    <button class="btn" type="submit">{{ __('Send enquiry') }}</button>
+                    <button class="btn" type="submit">{{ $form['submit_text'] ?? __('Send enquiry') }}</button>
                 </form>
                 <p class="muted">{{ __('No account needed. Your message goes to their Vidlix inbox, and their reply reaches you by email.') }}</p>
             @else

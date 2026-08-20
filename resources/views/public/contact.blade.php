@@ -3,8 +3,6 @@
 @section('meta_description', __('Send :name a message on Vidlix. No account needed.', ['name' => $profile->display_name]))
 @section('content')
 
-@php($fields = $form['fields'] ?? [])
-
 <section class="wrap page-hero">
     <p class="kicker">{{ $kind === 'creator' ? __('Creator') : __('Editor') }}</p>
     <h1>{{ $form['title'] ?? __('Contact :name', ['name' => $profile->display_name]) }}</h1>
@@ -34,54 +32,7 @@
             <form class="form" method="post" action="{{ route('profile.contact.submit', $profile->username) }}">
                 @csrf
 
-                @forelse($fields as $field)
-                    @php($key = $field['key'] ?? null)
-                    @continue(!$key)
-
-                    @php($type = $field['type'] ?? 'text')
-                    @php($required = (bool) ($field['required'] ?? false))
-                    @php($label = $field['label'] ?? ucfirst(str_replace('_', ' ', $key)))
-
-                    <label for="{{ $key }}">
-                        {{ $label }}
-                        @unless($required)<span class="muted">{{ __('(optional)') }}</span>@endunless
-                    </label>
-
-                    @if($type === 'textarea')
-                        <textarea id="{{ $key }}" name="{{ $key }}" @required($required)
-                                  placeholder="{{ $field['placeholder'] ?? '' }}">{{ old($key) }}</textarea>
-                    @elseif($type === 'select')
-                        <select id="{{ $key }}" name="{{ $key }}" @required($required)>
-                            <option value="">{{ __('Choose one') }}</option>
-                            @foreach($field['options'] ?? [] as $option)
-                                <option value="{{ $option }}" @selected(old($key) === $option)>{{ $option }}</option>
-                            @endforeach
-                        </select>
-                    @elseif($type === 'checkbox')
-                        <label class="checkbox">
-                            <input type="checkbox" id="{{ $key }}" name="{{ $key }}" value="1" @checked(old($key))>
-                            {{ $field['placeholder'] ?? $label }}
-                        </label>
-                    @else
-                        <input id="{{ $key }}" name="{{ $key }}"
-                               type="{{ $type === 'email' ? 'email' : ($type === 'phone' ? 'tel' : 'text') }}"
-                               value="{{ old($key) }}" @required($required)
-                               placeholder="{{ $field['placeholder'] ?? '' }}">
-                    @endif
-                @empty
-                    {{-- No published schema: the four fields every inquiry needs. --}}
-                    <label for="name">{{ __('Your name') }}</label>
-                    <input id="name" name="name" value="{{ old('name') }}" required>
-
-                    <label for="email">{{ __('Your email') }}</label>
-                    <input id="email" name="email" type="email" value="{{ old('email') }}" required>
-
-                    <label for="subject">{{ __('Subject') }}</label>
-                    <input id="subject" name="subject" value="{{ old('subject') }}" required>
-
-                    <label for="message">{{ __('Message') }}</label>
-                    <textarea id="message" name="message" required>{{ old('message') }}</textarea>
-                @endforelse
+                @include('partials.inquiry-fields')
 
                 <label class="hp" for="{{ $honeypot }}">{{ __('Leave this empty') }}</label>
                 <input class="hp" id="{{ $honeypot }}" name="{{ $honeypot }}" tabindex="-1" autocomplete="off">

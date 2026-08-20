@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContactFormVersion;
 use App\Models\SocialPlatform;
 use App\Services\Audit\AuditLogger;
 use App\Services\Social\SocialUrlResolver;
@@ -86,27 +85,5 @@ class PublicPageStudioController extends Controller
         $audit->record('social_link.created', $profile);
 
         return back()->with('status', __('Social link added.'));
-    }
-
-    public function saveForm(Request $request, AuditLogger $audit): RedirectResponse
-    {
-        $profile = $request->user()->creatorProfile()->with('publicPage.contactForm')->firstOrFail();
-        $form = $profile->publicPage->contactForm;
-        $current = $form->publishedVersion();
-        $schema = $current->schema_json;
-        $schema['title'] = $request->validate(['form_title' => ['required', 'string', 'max:120']])['form_title'];
-        $schema['description'] = $request->string('form_description')->toString();
-
-        $version = $form->current_version + 1;
-        ContactFormVersion::query()->create([
-            'contact_form_id' => $form->id,
-            'version_number' => $version,
-            'schema_json' => $schema,
-            'published_at' => now(),
-        ]);
-        $form->update(['current_version' => $version]);
-        $audit->record('contact_form.versioned', $form, ['version' => $version]);
-
-        return back()->with('status', __('New form version published. Old submissions keep the previous schema.'));
     }
 }

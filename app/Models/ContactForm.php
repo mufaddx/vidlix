@@ -8,7 +8,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ContactForm extends Model
 {
-    protected $fillable = ['creator_public_page_id', 'current_version'];
+    protected $fillable = [
+        'creator_public_page_id', 'owner_user_id', 'owner_scope', 'current_version', 'is_enabled',
+    ];
+
+    protected function casts(): array
+    {
+        return ['is_enabled' => 'boolean'];
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_user_id');
+    }
 
     public function page(): BelongsTo
     {

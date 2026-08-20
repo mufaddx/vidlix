@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminHelpDeskController;
 use App\Http\Controllers\Admin\AdminMemberController;
 use App\Http\Controllers\Admin\AdminOpsController;
 use App\Http\Controllers\Admin\AdminPlatformController;
+use App\Http\Controllers\App\ContactFormController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DiscoveryController;
 use App\Http\Controllers\App\InboxController;
@@ -115,7 +116,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/creator/public-page/draft', [PublicPageStudioController::class, 'saveDraft'])->name('creator.public-page.draft');
         Route::post('/creator/public-page/publish', [PublicPageStudioController::class, 'publish'])->name('creator.public-page.publish');
         Route::post('/creator/public-page/social', [PublicPageStudioController::class, 'addSocial'])->name('creator.public-page.social');
-        Route::post('/creator/public-page/form', [PublicPageStudioController::class, 'saveForm'])->name('creator.public-page.form');
+        // The form lives in its own builder now, shared with editors.
+        Route::redirect('/creator/public-page/form', '/contact-form')->name('creator.public-page.form');
+
+        /*
+         | The contact form builder. No route takes a form id: which form you
+         | are editing comes from your own account and your active role, so
+         | there is nothing in the request to point at somebody else's form.
+         */
+        Route::get('/contact-form', [ContactFormController::class, 'edit'])->name('app.contact-form');
+        Route::post('/contact-form', [ContactFormController::class, 'save'])->name('app.contact-form.save');
+        Route::post('/contact-form/fields', [ContactFormController::class, 'addField'])->name('app.contact-form.fields.add');
+        Route::delete('/contact-form/fields/{key}', [ContactFormController::class, 'removeField'])->name('app.contact-form.fields.remove');
+        Route::post('/contact-form/reorder', [ContactFormController::class, 'reorder'])->name('app.contact-form.reorder');
+        Route::post('/contact-form/toggle', [ContactFormController::class, 'toggle'])->name('app.contact-form.toggle');
 
         Route::get('/roles', [RoleApplicationController::class, 'index'])->name('app.roles');
         Route::post('/roles/apply', [RoleApplicationController::class, 'apply'])->name('app.roles.apply');

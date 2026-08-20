@@ -32,20 +32,11 @@
                 <div class="hp" aria-hidden="true">
                     <label>{{ __('Company website') }} <input type="text" name="{{ config('vidlix.public_form_honeypot') }}" tabindex="-1" autocomplete="off"></label>
                 </div>
-                @foreach(($form['fields'] ?? []) as $field)
-                    <label>
-                        {{ $field['label'] }}{{ ($field['required'] ?? false) ? ' *' : '' }}
-                        @if(($field['type'] ?? 'text') === 'textarea')
-                            <textarea name="{{ $field['key'] }}" @required($field['required'] ?? false)>{{ old($field['key']) }}</textarea>
-                        @else
-                            <input type="{{ $field['type'] === 'email' ? 'email' : 'text' }}" name="{{ $field['key'] }}" value="{{ old($field['key']) }}" @required($field['required'] ?? false)>
-                        @endif
-                        @error($field['key'])<span class="error">{{ $message }}</span>@enderror
-                    </label>
-                @endforeach
+                @include('partials.inquiry-fields')
+
                 @include('partials.turnstile')
 
-                <button class="btn" type="submit">{{ __('Send inquiry') }}</button>
+                <button class="btn" type="submit">{{ $form['submit_text'] ?? __('Send inquiry') }}</button>
             </form>
         @endif
     </aside>

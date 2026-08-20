@@ -63,10 +63,7 @@
     @endforeach
 </ul>
 <h2>{{ __('Contact form') }}</h2>
-<form class="form" method="post" action="{{ route('creator.public-page.form') }}">
-    @csrf
-    <label>{{ __('Form title') }}<input name="form_title" value="{{ $profile->publicPage->contactForm?->publishedVersion()?->schema_json['title'] ?? '' }}" required></label>
-    <label>{{ __('Form description') }}<textarea name="form_description">{{ $profile->publicPage->contactForm?->publishedVersion()?->schema_json['description'] ?? '' }}</textarea></label>
-    <button class="btn secondary" type="submit">{{ __('Publish form version') }}</button>
-</form>
+<p class="muted">{{ __('Your contact form has its own editor now, where you can add your own questions, reorder them, and show one only when a particular answer is picked.') }}</p>
+<p><a class="btn secondary" href="{{ route('app.contact-form') }}">{{ __('Edit contact form') }}</a></p>
+
 @endsection
