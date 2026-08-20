@@ -28,3 +28,15 @@ Thumbs.db
 
 # Security scan artefacts — may contain findings and target detail
 strix_runs/
+
+# Browser tests: reports, the throwaway database, and the local env file
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+/database/e2e.sqlite
+
+# Ruflo runtime state. It belongs to the machine, not to the project.
+/.claude-flow
+/.swarm
+/.hive-mind

@@ -36,6 +36,9 @@ tags = ["webhook"]
 description = "Documentation placeholders and test fixtures are not real secrets"
 paths = [
     '''\.env\.example$''',
+    # Committed on purpose and holds no credentials: a browser run must not
+    # be able to reach a real provider.
+    '''\.env\.e2e$''',
     '''docs/.*\.md$''',
     '''tests/.*''',
 ]

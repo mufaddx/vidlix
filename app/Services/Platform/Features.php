@@ -123,10 +123,22 @@ class Features
         Cache::forget(self::CACHE_KEY);
     }
 
+    /**
+     * A plain array goes into the cache, never a Collection.
+     *
+     * The file and database cache stores serialize what they are given, and a
+     * serialized Collection read back in a process that has not yet loaded the
+     * class comes out as __PHP_Incomplete_Class - every page then 500s. The
+     * array driver the test suite uses hands the object straight back, so this
+     * only ever broke where it mattered. The browser suite caught it; no
+     * in-process test can, because the class is already loaded there.
+     *
+     * @return Collection<string, mixed>
+     */
     private function all(): Collection
     {
-        return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
-            $values = collect();
+        $values = Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function (): array {
+            $values = [];
 
             foreach (FeatureFlag::query()->get(['key', 'is_enabled', 'audience']) as $flag) {
                 $values[$flag->key] = ['is_enabled' => (bool) $flag->is_enabled, 'audience' => $flag->audience];
@@ -138,5 +150,7 @@ class Features
 
             return $values;
         });
+
+        return collect($values);
     }
 }
