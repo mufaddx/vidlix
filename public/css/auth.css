@@ -66,7 +66,10 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
-.auth-brand { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 26px; color: var(--ink); }
+/* inline-block so the bottom margin actually applies: as a plain <a> this
+   element is inline, the 26px was silently ignored, and the step bar sat
+   flush under the wordmark as though the wordmark were step one. */
+.auth-brand { display: inline-block; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 26px; color: var(--ink); }
 .auth-brand:hover { text-decoration: none; }
 
 .auth-title { font-size: 23px; font-weight: 700; letter-spacing: -0.025em; margin: 0 0 6px; }
