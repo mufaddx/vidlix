@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\App;
 
 use App\Contracts\InstagramProviderInterface;
+use App\Contracts\PushProviderInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Automation;
 use App\Models\BlogPost;
@@ -32,6 +33,7 @@ use App\Services\Ledger\LedgerService;
 use App\Services\Managers\ManagerDirectory;
 use App\Services\Marketplace\MarketplaceEngine;
 use App\Services\Media\MediaStorage;
+use App\Services\Notifications\Notifier;
 use App\Services\Support\HelpDesk;
 use App\Services\Workspace\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -570,9 +572,27 @@ class WorkspaceController extends Controller
         ]));
     }
 
-    public function notifications(): View
+    public function notifications(Request $request, Notifier $notifier): View
     {
-        return view('app.notifications', ['items' => request()->user()->notifications()->latest()->limit(50)->get()]);
+        return view('app.notifications', [
+            'items' => $request->user()->notifications()->latest()->limit(50)->get(),
+            'preferences' => $notifier->preferences($request->user()),
+            'pushConfigured' => app(PushProviderInterface::class)->isConfigured(),
+        ]);
+    }
+
+    public function saveNotificationPreferences(Request $request, Notifier $notifier): RedirectResponse
+    {
+        $notifier->savePreferences($request->user(), (array) $request->input('events', []));
+
+        return back()->with('status', __('Saved.'));
+    }
+
+    public function markNotificationsRead(Request $request): RedirectResponse
+    {
+        $request->user()->unreadNotifications->markAsRead();
+
+        return back();
     }
 
     public function settings(): View

@@ -34,7 +34,9 @@ use App\Services\Audit\AuditLogger;
 use App\Services\Ledger\LedgerService;
 use App\Services\Media\MediaStorage;
 use App\Services\Messaging\InboxQuery;
+use App\Services\Notifications\Notifier;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -49,6 +51,7 @@ class MarketplaceEngine
         private InstagramProviderInterface $instagram,
         private LedgerService $ledger,
         private MediaStorage $media,
+        private Notifier $notifier,
     ) {}
 
     public function applyToCampaign(User $user, Campaign $campaign, array $data): CampaignApplication
@@ -98,6 +101,18 @@ class MarketplaceEngine
             throw ValidationException::withMessages(['status' => __('Illegal application transition.')]);
         }
         $application->update(['status' => $status]);
+
+        $applicant = User::query()->find($application->creator()->value('user_id'));
+
+        if ($applicant !== null && in_array($status, ['accepted', 'rejected', 'shortlisted'], true)) {
+            $this->notifier->send(
+                $applicant,
+                'application_decided',
+                'Your application was '.$status,
+                'A brand updated your campaign application.',
+                ['application' => (string) $application->getKey()],
+            );
+        }
         $this->audit->record('application.transitioned', $application, ['from' => $from, 'to' => $status]);
     }
 
@@ -191,6 +206,16 @@ class MarketplaceEngine
         }
         $project->update(['status' => $to]);
         $this->audit->record('project.transitioned', $project, ['to' => $to]);
+
+        foreach ($this->projectParticipants($project) as $person) {
+            $this->notifier->send(
+                $person,
+                'project_updated',
+                $project->name.' moved to '.str_replace('_', ' ', $to),
+                'The project changed stage.',
+                ['project' => (string) $project->getKey()],
+            );
+        }
 
         if ($to === 'completed') {
             $this->releaseProjectEarnings($project->fresh());
@@ -491,6 +516,18 @@ class MarketplaceEngine
         return $conversation;
     }
 
+    /**
+     * Both sides of a project, skipping any that is not set.
+     *
+     * @return Collection<int, User>
+     */
+    private function projectParticipants(Project $project): Collection
+    {
+        $ids = array_filter([$project->owner_user_id, $project->counterparty_user_id]);
+
+        return $ids === [] ? collect() : User::query()->whereIn('id', $ids)->get();
+    }
+
     public function postInternalMessage(Conversation $conversation, User $actor, string $body): Message
     {
         abort_unless($conversation->participants()->where('user_id', $actor->id)->exists(), 403);
@@ -503,6 +540,24 @@ class MarketplaceEngine
             'delivery_status' => 'stored',
         ]);
         $conversation->update(['last_message_at' => now()]);
+
+        foreach ($conversation->participants as $participant) {
+            if ($participant->user_id === null || (int) $participant->user_id === $actor->id) {
+                continue;
+            }
+
+            $recipient = User::query()->find($participant->user_id);
+
+            if ($recipient !== null) {
+                $this->notifier->send(
+                    $recipient,
+                    'message_received',
+                    $actor->name.' sent you a message',
+                    Str::limit($body, 140),
+                    ['conversation' => (string) $conversation->conversation_uuid],
+                );
+            }
+        }
 
         return $message;
     }

@@ -174,6 +174,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/support', [WorkspaceController::class, 'tickets'])->name('app.tickets');
         Route::post('/support', [WorkspaceController::class, 'storeTicket'])->name('app.tickets.store');
         Route::get('/notifications', [WorkspaceController::class, 'notifications'])->name('app.notifications');
+        Route::post('/notifications/preferences', [WorkspaceController::class, 'saveNotificationPreferences'])->name('app.notifications.preferences');
+        Route::post('/notifications/read', [WorkspaceController::class, 'markNotificationsRead'])->name('app.notifications.read');
         Route::get('/settings', [WorkspaceController::class, 'settings'])->name('app.settings');
         Route::post('/settings/sessions/{id}', [WorkspaceController::class, 'revokeSession'])->name('app.sessions.revoke');
 
