@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+    <link rel="stylesheet" href="{{ \App\Support\Asset::url('css/auth.css') }}">
 </head>
 <body>
     <div class="auth-wrap">
@@ -25,6 +25,6 @@
     </div>
 
     @stack('modals')
-    <script src="{{ asset('js/auth.js') }}" defer></script>
+    <script src="{{ \App\Support\Asset::url('js/auth.js') }}" defer></script>
 </body>
 </html>
