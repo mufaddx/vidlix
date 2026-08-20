@@ -26,7 +26,10 @@
     @method('DELETE')
 
     <label for="privacy-password">{{ __('Your password') }}</label>
-    <input id="privacy-password" type="password" name="password" required autocomplete="current-password">
+    <div class="field-password">
+        <input id="privacy-password" type="password" name="password" required autocomplete="current-password">
+        @include('partials.reveal', ['for' => 'privacy-password'])
+    </div>
     @error('password')<p class="error">{{ $message }}</p>@enderror
 
     <label for="privacy-reason">{{ __('Why are you leaving? (optional)') }}</label>

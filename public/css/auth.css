@@ -353,3 +353,7 @@ a:hover { text-decoration: underline; }
   /* The orbit still appears, it simply does not spin. */
   .otp-stage.is-verifying .orbit, .otp-stage.is-done .orbit { opacity: 1; transform: none; }
 }
+
+.modal-gate { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+.modal-body { overflow-y: auto; max-height: min(56vh, 480px); }
+[data-terms-accept][disabled] { opacity: 0.5; cursor: not-allowed; }

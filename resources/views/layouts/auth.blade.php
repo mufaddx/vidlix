@@ -25,6 +25,7 @@
     </div>
 
     @stack('modals')
+        <script src="{{ \App\Support\Asset::url('js/site.js') }}" defer></script>
     <script src="{{ \App\Support\Asset::url('js/auth.js') }}" defer></script>
 </body>
 </html>

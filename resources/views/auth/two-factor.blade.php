@@ -27,7 +27,10 @@
     <form class="form" method="post" action="{{ route('app.two-factor.disable') }}">
         @csrf @method('DELETE')
         <label for="tf-password">{{ __('Confirm your password') }}</label>
-        <input id="tf-password" type="password" name="password" required autocomplete="current-password">
+        <div class="field-password">
+            <input id="tf-password" type="password" name="password" required autocomplete="current-password">
+            @include('partials.reveal', ['for' => 'tf-password'])
+        </div>
         @error('password')<p class="error">{{ $message }}</p>@enderror
         <button class="btn secondary" type="submit">{{ __('Turn off two-factor') }}</button>
     </form>

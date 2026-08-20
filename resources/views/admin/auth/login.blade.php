@@ -23,7 +23,10 @@
             </div>
             <div>
                 <label for="password">{{ __('Password') }}</label>
-                <input id="password" name="password" type="password" required autocomplete="current-password">
+                <div class="field-password">
+                    <input id="password" name="password" type="password" required autocomplete="current-password">
+                    @include('partials.reveal', ['for' => 'password'])
+                </div>
             </div>
             <label class="a-check">
                 <input type="checkbox" name="remember" value="1">
@@ -37,5 +40,6 @@
         </p>
     </div>
 </div>
+    <script src="{{ \App\Support\Asset::url('js/site.js') }}" defer></script>
 </body>
 </html>

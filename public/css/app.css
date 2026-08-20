@@ -515,3 +515,20 @@ textarea { min-height: 120px; resize: vertical; }
 /* While a drawer is open the page underneath must not scroll: on a phone the
    background scrolling behind a menu reads as the page itself moving. */
 body.nav-locked { overflow: hidden; }
+
+/* Show-password button. Sits inside a .field-password wrapper, which is what
+   makes the absolute position resolve against the field rather than the page. */
+.field-password { position: relative; display: block; }
+.field-password input { padding-right: 46px; }
+.reveal {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; min-height: 36px;
+  display: grid; place-items: center;
+  background: none; border: 0; border-radius: 8px;
+  cursor: pointer; padding: 0; color: var(--muted);
+}
+.reveal svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.reveal .icon-hide { display: none; }
+.reveal[aria-pressed="true"] .icon-show { display: none; }
+.reveal[aria-pressed="true"] .icon-hide { display: block; }
+.reveal:hover { color: var(--ink); background: var(--bg-sunken); }

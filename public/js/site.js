@@ -87,3 +87,36 @@
         }
     });
 })();
+
+/**
+ * Show-password buttons, wherever a password is typed.
+ *
+ * Delegated from the document, so it covers the sign-in screens, the admin
+ * front door, the manager invitation, and every confirm-your-password step -
+ * these all used to have a bare field because the handler lived in the file
+ * only the three public auth screens loaded.
+ */
+(function () {
+    'use strict';
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest ? event.target.closest('[data-reveal]') : null;
+
+        if (!button) {
+            return;
+        }
+
+        var input = document.getElementById(button.getAttribute('data-reveal'));
+
+        if (!input) {
+            return;
+        }
+
+        var show = input.type === 'password';
+
+        input.type = show ? 'text' : 'password';
+        button.setAttribute('aria-pressed', show ? 'true' : 'false');
+        button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        button.setAttribute('title', show ? 'Hide password' : 'Show password');
+    });
+})();

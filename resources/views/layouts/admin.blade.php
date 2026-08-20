@@ -76,5 +76,6 @@
         </div>
     </main>
 </div>
+    <script src="{{ \App\Support\Asset::url('js/site.js') }}" defer></script>
 </body>
 </html>

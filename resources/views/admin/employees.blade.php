@@ -69,8 +69,8 @@
                 <div><label for="mobile">{{ __('Mobile') }}</label><input id="mobile" name="mobile" value="{{ old('mobile') }}"></div>
             </div>
             <div class="a-form-row">
-                <div><label for="password">{{ __('Temporary password') }}</label><input id="password" name="password" type="password" required autocomplete="new-password"></div>
-                <div><label for="password_confirmation">{{ __('Confirm') }}</label><input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password"></div>
+                <div><label for="password">{{ __('Temporary password') }}</label><span class="field-password"><input id="password" name="password" type="password" required autocomplete="new-password">@include('partials.reveal', ['for' => 'password'])</span></div>
+                <div><label for="password_confirmation">{{ __('Confirm') }}</label><span class="field-password"><input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">@include('partials.reveal', ['for' => 'password_confirmation'])</span></div>
             </div>
 
             @foreach($groups as $group => $abilities)

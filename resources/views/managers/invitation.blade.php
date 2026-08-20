@@ -30,10 +30,16 @@
         <input id="mobile" name="mobile" value="{{ old('mobile', $invitation->mobile) }}" autocomplete="tel">
 
         <label for="password">{{ __('Choose a password') }}</label>
-        <input id="password" name="password" type="password" required autocomplete="new-password">
+        <div class="field-password">
+            <input id="password" name="password" type="password" required autocomplete="new-password">
+            @include('partials.reveal', ['for' => 'password'])
+        </div>
 
         <label for="password_confirmation">{{ __('Confirm password') }}</label>
-        <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
+        <div class="field-password">
+            <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
+            @include('partials.reveal', ['for' => 'password_confirmation'])
+        </div>
 
         <button class="btn" type="submit">{{ __('Create account and accept') }}</button>
     </form>

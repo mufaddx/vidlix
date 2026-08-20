@@ -123,6 +123,27 @@ final class TermsContent
         return rtrim(rtrim(number_format($bps / 100, 2), '0'), '.').'%';
     }
 
+    /**
+     * Every role's complete terms.
+     *
+     * This is what both the website and the app render. all() returns only the
+     * role-specific half, and rendering that on its own is how the site ended
+     * up showing an agreement with no money terms in it while the phone showed
+     * the full one.
+     *
+     * @return array<string, array{label: string, intro: string, points: array<int, array{title: string, body: string}>}>
+     */
+    public static function complete(): array
+    {
+        $complete = [];
+
+        foreach (array_keys(self::all()) as $role) {
+            $complete[$role] = self::forRole($role);
+        }
+
+        return $complete;
+    }
+
     /** A role's own terms, with the money terms appended. */
     public static function forRole(string $role): ?array
     {

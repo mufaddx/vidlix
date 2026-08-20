@@ -32,7 +32,7 @@ class SignupFlowController extends Controller
     public function create(Request $request): View
     {
         return view('auth.signup', [
-            'terms' => TermsContent::all(),
+            'terms' => TermsContent::complete(),
             'pending' => $request->session()->get(self::SESSION_KEY),
             'step' => $this->currentStep($request),
             'resendCooldown' => OtpService::RESEND_COOLDOWN,

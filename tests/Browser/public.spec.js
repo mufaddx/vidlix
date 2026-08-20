@@ -8,7 +8,7 @@ test.describe('public pages', () => {
         await page.goto('/');
 
         await expect(page.getByRole('heading', { name: 'How the money works' })).toBeVisible();
-        await expect(page.getByText('no button anywhere that marks money received')).toBeVisible();
+        await expect(page.getByText('Nobody at Vidlix can mark money as received.')).toBeVisible();
     });
 
     test('the proof row shows counted figures rather than claims', async ({ page }) => {

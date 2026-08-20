@@ -24,16 +24,10 @@ class AuthController extends Controller
      */
     public function terms(Request $request): JsonResponse
     {
-        $roles = [];
-
-        foreach (array_keys(TermsContent::all()) as $role) {
-            $roles[$role] = TermsContent::forRole($role);
-        }
-
         return response()->json([
             'success' => true,
             'code' => 'OK',
-            'data' => ['roles' => $roles],
+            'data' => ['roles' => TermsContent::complete()],
             'request_id' => $request->attributes->get('request_id'),
         ]);
     }

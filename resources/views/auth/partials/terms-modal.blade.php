@@ -29,7 +29,8 @@
         </div>
 
         <div class="modal-foot">
-            <button class="btn" type="button" data-terms-accept>{{ __('I agree & accept') }}</button>
+            <p class="modal-gate" data-terms-gate>{{ __('Scroll to the end to accept.') }}</p>
+            <button class="btn" type="button" data-terms-accept disabled>{{ __('I agree & accept') }}</button>
             <button class="btn ghost" type="button" data-terms-close>{{ __('Close') }}</button>
             <p class="modal-note">
                 {{ __('This is a plain-language summary, not the binding agreement. The full policies are at') }}

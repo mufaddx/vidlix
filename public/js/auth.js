@@ -40,16 +40,7 @@
   }
 
   /* --- Password reveal --------------------------------------------------- */
-  document.addEventListener('click', function (event) {
-    var button = event.target.closest('[data-reveal]');
-    if (!button) return;
-    var input = document.getElementById(button.getAttribute('data-reveal'));
-    if (!input) return;
-    var show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    button.setAttribute('aria-pressed', show ? 'true' : 'false');
-    button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-  });
+  
 
   /* --- Terms modal ------------------------------------------------------- */
   var modal = document.querySelector('[data-terms-modal]');
@@ -76,8 +67,37 @@
     lastFocused = document.activeElement;
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
+
+    // Accept is closed until the reader reaches the end. A button that is live
+    // under an unread wall of text collects a click, not consent.
+    gateAccept();
+
     var focusable = modal.querySelector('[data-terms-accept]');
     if (focusable) focusable.focus();
+  }
+
+  function gateAccept() {
+    var body = modal.querySelector('.modal-body');
+    var accept = modal.querySelector('[data-terms-accept]');
+    var note = modal.querySelector('[data-terms-gate]');
+
+    if (!body || !accept) return;
+
+    body.scrollTop = 0;
+
+    function check() {
+      // A short agreement may not scroll at all, in which case it has already
+      // been seen in full.
+      var read = body.scrollHeight - body.clientHeight <= 4
+        || body.scrollTop + body.clientHeight >= body.scrollHeight - 24;
+
+      accept.disabled = !read;
+      if (note) note.hidden = read;
+    }
+
+    body.removeEventListener('scroll', check);
+    body.addEventListener('scroll', check);
+    check();
   }
 
   function closeTerms() {
