@@ -16,7 +16,10 @@
     <header class="site-header">
         <div class="wrap nav" id="site-nav">
             <a class="brand" href="{{ route('home') }}">{{ config('app.name') }}</a>
-            @include('partials.nav-toggle', ['controls' => 'primary-nav'])
+            <div class="nav-actions">
+                @include('partials.theme-toggle')
+                @include('partials.nav-toggle', ['controls' => 'primary-nav'])
+            </div>
             <nav class="nav-links" id="primary-nav" aria-label="{{ __('Primary') }}">
                 <a href="{{ route('creators.index') }}">{{ __('Creators') }}</a>
                 <a href="{{ route('editors.index') }}">{{ __('Editors') }}</a>
@@ -31,10 +34,14 @@
                     <a href="{{ route('login') }}">{{ __('Login') }}</a>
                     <a class="btn" href="{{ route('register') }}">{{ __('Join') }}</a>
                 @endauth
-                @include('partials.theme-toggle')
             </nav>
         </div>
     </header>
+    {{-- Outside the header on purpose. The header has a backdrop-filter, which
+         makes it the containing block for fixed-position descendants: in there
+         this covered only the header's own 76px and taps went straight through
+         to the page behind the open drawer. --}}
+    <div class="nav-scrim" data-nav-close hidden></div>
     <main id="main">
         @yield('content')
     </main>
