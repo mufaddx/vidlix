@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Identity\AccountProvisioner;
+use App\Support\TermsContent;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,27 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /**
+     * The terms a person must accept, served from the same source the website
+     * renders. Two copies of an agreement drift, and the phone's would be the
+     * stale one.
+     */
+    public function terms(Request $request): JsonResponse
+    {
+        $roles = [];
+
+        foreach (array_keys(TermsContent::all()) as $role) {
+            $roles[$role] = TermsContent::forRole($role);
+        }
+
+        return response()->json([
+            'success' => true,
+            'code' => 'OK',
+            'data' => ['roles' => $roles],
+            'request_id' => $request->attributes->get('request_id'),
+        ]);
+    }
+
     public function register(RegisterRequest $request, AccountProvisioner $onboarding): JsonResponse
     {
         $user = User::query()->create([

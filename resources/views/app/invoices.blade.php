@@ -25,6 +25,6 @@
     @endforeach
     </tbody>
 </table>
-<p class="muted">{{ __('An invoice records what is owed. A payment is confirmed only when the provider says so.') }}</p>
+<p class="muted">{{ __('An invoice records what is owed. It is marked paid only when the payment is actually confirmed.') }}</p>
 @endif
 @endsection

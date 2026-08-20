@@ -4,7 +4,7 @@
 <div class="wrap page-hero">
     <p class="kicker">{{ __('Workspace') }}</p>
     <h1>{{ __('Creator management plans') }}</h1>
-    <p class="lede">{{ __('Prices are admin-configurable. Nothing is charged until a payment provider is connected.') }}</p>
+    <p class="lede">{{ __('Simple plans, no joining fee. You are only charged for what you book.') }}</p>
 </div>
 <div class="wrap section" style="padding-top:12px;">
     <div class="grid">

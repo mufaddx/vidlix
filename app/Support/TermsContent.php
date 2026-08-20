@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\CommissionRule;
+
 /**
  * Role-specific terms shown before sign-up.
  *
@@ -57,8 +59,81 @@ final class TermsContent
         ];
     }
 
+    /**
+     * The money terms, which are the same whoever you are.
+     *
+     * Kept apart from the role sections because every person on the platform
+     * agrees to these, and because the fee is read from the live commission
+     * rule rather than typed in here: terms that quote a rate the system does
+     * not actually charge are worse than terms that quote none.
+     *
+     * @return array{label: string, intro: string, points: array<int, array{title: string, body: string}>}
+     */
+    public static function payments(): array
+    {
+        return [
+            'label' => 'Fees and payments',
+            'intro' => 'How money moves, what Vidlix charges, and what happens when something goes wrong.',
+            'points' => [
+                [
+                    'title' => 'What Vidlix charges',
+                    'body' => 'Vidlix charges a platform fee of '.self::feeLabel().' on the value of work booked through the platform. The fee is shown on every invoice before you commit to anything, and it is the only charge Vidlix makes: there is no joining fee, no listing fee and no charge for holding an account. If the rate ever changes, the new rate applies only to work booked after we have told you.',
+                ],
+                [
+                    'title' => 'Paying and being paid',
+                    'body' => 'Payments run through a licensed payment provider. Money a brand pays is held against the project and released to the other side when the work is accepted. A payment counts as made only when the provider confirms it to us — opening a checkout page is not a payment, and nothing in Vidlix will show as paid before that confirmation arrives.',
+                ],
+                [
+                    'title' => 'Taxes',
+                    'body' => 'Prices agreed between two members are exclusive of tax unless the proposal says otherwise. Each side is responsible for its own tax position, including GST registration and returns where they apply. Vidlix issues an invoice for its own fee and applies tax on that fee as the law requires.',
+                ],
+                [
+                    'title' => 'Cancellation and refunds',
+                    'body' => 'A project cancelled before work starts is refunded in full, less any payment-provider charge that cannot be recovered. Once work has started, what is refundable is what has not yet been delivered; delivered work is payable. The platform fee is refunded in the same proportion as the work.',
+                ],
+                [
+                    'title' => 'Late payment',
+                    'body' => 'Invoices are due on the date shown on them. An overdue account may have new bookings paused until it is settled. We will always tell you before pausing anything.',
+                ],
+                [
+                    'title' => 'Disputes and chargebacks',
+                    'body' => 'If the two sides disagree, the platform dispute process decides what is owed, and both sides agree to use it before going anywhere else. Raising a chargeback with your bank instead, on work that was delivered, may result in the account being suspended while it is resolved.',
+                ],
+                [
+                    'title' => 'Withdrawals',
+                    'body' => 'You withdraw your balance to a bank account you have verified. A withdrawal is marked paid only once the payment provider confirms the transfer, and the balance you see is added up from the ledger rather than typed in by anyone.',
+                ],
+            ],
+        ];
+    }
+
+    /** The platform fee as a percentage, taken from the active commission rule. */
+    public static function feeLabel(): string
+    {
+        $bps = CommissionRule::query()
+            ->where('is_active', true)
+            ->where('slug', 'platform')
+            ->value('bps');
+
+        if (! $bps) {
+            // Said plainly rather than quoting a number nobody configured.
+            return 'a percentage set out in your invoice';
+        }
+
+        return rtrim(rtrim(number_format($bps / 100, 2), '0'), '.').'%';
+    }
+
+    /** A role's own terms, with the money terms appended. */
     public static function forRole(string $role): ?array
     {
-        return self::all()[$role] ?? null;
+        $terms = self::all()[$role] ?? null;
+
+        if ($terms === null) {
+            return null;
+        }
+
+        $terms['points'] = [...$terms['points'], ...self::payments()['points']];
+
+        return $terms;
     }
 }

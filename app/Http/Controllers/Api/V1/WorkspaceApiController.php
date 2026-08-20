@@ -16,8 +16,11 @@ use App\Models\LedgerEntry;
 use App\Models\ManagerAssignment;
 use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Role;
 use App\Models\Withdrawal;
+use App\Services\Audit\AuditLogger;
 use App\Services\Email\OutboundEmailService;
+use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
 use App\Services\Marketplace\MarketplaceEngine;
 use Illuminate\Http\JsonResponse;
@@ -191,6 +194,36 @@ class WorkspaceApiController extends Controller
             'insights' => $account->insights ?? [],
             'connect_url' => $profile ? $instagram->authorizationUrl($profile) : null,
         ]);
+    }
+
+    /**
+     * Take on another role from the phone.
+     *
+     * The same rules as the website: an account is an account, and a person
+     * adds creator, editor or brand to it whenever they decide to. Manager is
+     * absent on purpose - nobody applies to be one.
+     */
+    public function applyForRole(Request $request, AccountProvisioner $provisioner, AuditLogger $audit): JsonResponse
+    {
+        $data = $request->validate([
+            'role' => ['required', 'in:creator,editor,brand'],
+        ]);
+
+        $user = $request->user();
+
+        if (in_array($data['role'], $user->roleSlugs(), true)) {
+            return $this->ok($request, ['roles' => $user->roleSlugs(), 'already_held' => true]);
+        }
+
+        $role = Role::query()->where('slug', $data['role'])->firstOrFail();
+        $user->roles()->attach($role);
+        $provisioner->provisionRole($user, $role->slug);
+        $audit->record('role.applied', $user, ['role' => $role->slug]);
+
+        return $this->ok($request, [
+            'roles' => $user->fresh()->roleSlugs(),
+            'already_held' => false,
+        ], 201);
     }
 
     public function registerDevice(Request $request): JsonResponse

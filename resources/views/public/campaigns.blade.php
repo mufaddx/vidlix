@@ -4,7 +4,7 @@
 <div class="wrap page-hero">
     <p class="kicker">{{ __('Marketplace') }}</p>
     <h1>{{ __('Open campaigns') }}</h1>
-    <p class="lede">{{ __('Apply with a proposed fee. Settlement still waits on a real payment provider.') }}</p>
+    <p class="lede">{{ __('Apply with the fee you want for the work. Payment is handled and held by the platform until the work is accepted.') }}</p>
 </div>
 <div class="wrap section" style="padding-top:12px;">
     <div class="grid">

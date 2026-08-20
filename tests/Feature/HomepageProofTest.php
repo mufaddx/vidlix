@@ -53,6 +53,6 @@ class HomepageProofTest extends TestCase
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('There is no button anywhere that marks money received.', false);
+            ->assertSee('Nobody at Vidlix can mark money as received.', false);
     }
 }

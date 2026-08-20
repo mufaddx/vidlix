@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api.dart';
 import '../push.dart';
+import 'terms_screen.dart';
 import '../theme.dart';
 import 'campaigns_screen.dart';
 import 'earnings_screen.dart';
@@ -24,6 +25,7 @@ class _AccountScreenState extends State<AccountScreen> {
   List invoices = [];
   bool loading = true;
   bool registering = false;
+  bool applyingRole = false;
   String? pushState;
 
   @override
@@ -48,6 +50,79 @@ class _AccountScreenState extends State<AccountScreen> {
       invoices = Api.listOf(invRes);
       loading = false;
     });
+  }
+
+  static const _applicableRoles = {
+    'creator': 'Influencer',
+    'editor': 'Editor',
+    'brand': 'Brand',
+  };
+
+  Widget _rolesSection() {
+    final held = ((me['roles'] as List?) ?? const []).map((r) => '$r').toList();
+    final available = _applicableRoles.entries.where((e) => !held.contains(e.key)).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (held.isEmpty)
+          const NoticeCard('You have not taken on a role yet.')
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: held
+                .map((r) => Chip(
+                      label: Text(_applicableRoles[r] ?? r),
+                      backgroundColor: VidlixTheme.accentSoft,
+                      side: const BorderSide(color: VidlixTheme.accent),
+                    ))
+                .toList(),
+          ),
+        if (available.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Text(
+            'You can take on another role at any time. Each one has its own terms.',
+            style: TextStyle(color: VidlixTheme.muted, fontSize: 13),
+          ),
+          const SizedBox(height: 10),
+          ...available.map((entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: OutlinedButton(
+                  onPressed: applyingRole ? null : () => _applyForRole(entry.key, entry.value),
+                  child: Text('Become ${entry.value}'),
+                ),
+              )),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _applyForRole(String role, String label) async {
+    // The same agreement the website shows, read in full before it applies.
+    final accepted = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => TermsScreen(api: widget.api, role: role, roleLabel: label),
+    ));
+
+    if (accepted != true || !mounted) return;
+
+    setState(() => applyingRole = true);
+    final res = await widget.api.post('/roles/apply', {'role': role}, auth: true);
+    if (!mounted) return;
+    setState(() => applyingRole = false);
+
+    if (res['success'] == true) {
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You are now registered as $label.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(Api.firstError(res, 'That did not work.'))),
+    );
   }
 
   Widget _pushSection() {
@@ -174,6 +249,8 @@ class _AccountScreenState extends State<AccountScreen> {
               )),
             ),
           ),
+          const SectionTitle('Your roles'),
+          _rolesSection(),
           const SectionTitle('Notifications'),
           _pushSection(),
           const SectionTitle('Instagram'),
@@ -206,11 +283,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                 )),
           const SizedBox(height: 24),
-          const NoticeCard(
-            'This app talks only to the Vidlix HTTPS API. It never connects to MySQL, and it '
-            'never shows a payment, insight, or email as confirmed unless the server says a '
-            'provider confirmed it.',
-          ),
+
           OutlinedButton(onPressed: widget.onSignOut, child: const Text('Log out')),
         ],
       ),

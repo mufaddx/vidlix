@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @section('title', ($sections['hero']->title ?? config('app.name')).' — marketplace')
-@section('meta_description', $sections['hero']->subtitle ?? 'Discover creators, hire editors, run brand campaigns, and settle through a real payment provider.')
+@section('meta_description', $sections['hero']->subtitle ?? 'Discover creators, hire editors, run brand campaigns, and get paid properly.')
 
 @section('content')
 <section class="hero-stage">
@@ -9,7 +9,7 @@
         <div>
             <p class="kicker">{{ __('Creator × Brand × Editor × Manager') }}</p>
             <h1>{{ $sections['hero']->title ?? __('The production desk for creators, brands and editors') }}</h1>
-            <p class="lede">{{ $sections['hero']->subtitle ?? __('Discover talent, negotiate in the open, invoice properly, and settle through a real payment provider.') }}</p>
+            <p class="lede">{{ $sections['hero']->subtitle ?? __('Discover talent, agree terms in the open, invoice properly, and get paid on time.') }}</p>
             <form class="search" action="{{ route('creators.index') }}" method="get" role="search">
                 <label class="hp" for="q">{{ __('Search creators') }}</label>
                 <input id="q" name="q" type="search" placeholder="{{ __('Search creators by name, niche, or handle') }}" value="{{ request('q') }}">
@@ -32,7 +32,7 @@
             <ol>
                 <li>{{ __('Discover verified talent') }}</li>
                 <li>{{ __('Propose and counter in versioned offers') }}</li>
-                <li>{{ __('Agree, invoice, pay via provider') }}</li>
+                <li>{{ __('Agree, invoice, pay securely') }}</li>
                 <li>{{ __('Deliver, revise, settle, review') }}</li>
             </ol>
         </aside>
@@ -90,8 +90,8 @@
     </div>
     <div class="grid">
         <article class="card">
-            <h3>{{ __('Nothing is paid until a provider says so') }}</h3>
-            <p class="muted">{{ __('A payment shows as confirmed only when the payment provider tells us it was, through a signed webhook. There is no button anywhere that marks money received.') }}</p>
+            <h3>{{ __('Nothing is marked paid until the bank confirms it') }}</h3>
+            <p class="muted">{{ __('A payment is confirmed by the bank or card network itself, never by us. Nobody at Vidlix can mark money as received.') }}</p>
         </article>
         <article class="card">
             <h3>{{ __('The ledger is the record') }}</h3>
@@ -113,12 +113,12 @@
         <a href="{{ route('pages.show', 'how-it-works') }}">{{ __('Read the full flow') }}</a>
     </div>
     <div class="grid">
-        <article class="card"><h3>{{ __('Creators') }}</h3><p class="muted">{{ __('Public media kit, optional Instagram OAuth, and a no-registration inquiry form.') }}</p></article>
+        <article class="card"><h3>{{ __('Creators') }}</h3><p class="muted">{{ __('A public media kit, optional Instagram connection, and an enquiry form anyone can use.') }}</p></article>
         <article class="card"><h3>{{ __('Editors') }}</h3><p class="muted">{{ __('Apply, get verified, then run structured projects with files and revision limits.') }}</p></article>
         <article class="card"><h3>{{ __('Brands') }}</h3><p class="muted">{{ __('Verify the company, publish campaigns, compare applicants, then negotiate.') }}</p></article>
         <article class="card"><h3>{{ __('Managers') }}</h3><p class="muted">{{ __('Delegated inbox and deals under a subscription. Creator can revoke instantly.') }}</p></article>
-        <article class="card"><h3>{{ __('Instagram intelligence') }}</h3><p class="muted">{{ __('Permitted insights only. Token expiry asks for reconnect — numbers are never invented.') }}</p></article>
-        <article class="card"><h3>{{ __('Protected payments') }}</h3><p class="muted">{{ __('Checkout opens a provider. Settlement waits on a signed webhook.') }}</p></article>
+        <article class="card"><h3>{{ __('Instagram intelligence') }}</h3><p class="muted">{{ __('Official Instagram data only, with your permission. Numbers are never invented.') }}</p></article>
+        <article class="card"><h3>{{ __('Protected payments') }}</h3><p class="muted">{{ __('Money is held safely until the work is accepted, then released.') }}</p></article>
     </div>
 </section>
 
@@ -210,7 +210,7 @@
     <div class="section-head">
         <div>
             <h2>{{ __('Creator management') }}</h2>
-            <p class="muted">{{ __('Admin-configurable plans. Charging waits on a payment provider.') }}</p>
+            <p class="muted">{{ __('Plans for creators who want their inbox and deals handled for them.') }}</p>
         </div>
         <a href="{{ route('pricing') }}">{{ __('Compare plans') }}</a>
     </div>

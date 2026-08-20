@@ -91,6 +91,29 @@ class Api {
     return const [];
   }
 
+  /// The first thing that actually went wrong, in words a person can act on.
+  ///
+  /// The API answers a rejected form with a map of field errors; showing the
+  /// generic message instead ("The given data was invalid") tells somebody
+  /// nothing about which field to fix.
+  static String firstError(Map<String, dynamic> response, String fallback) {
+    final errors = response['errors'];
+
+    if (errors is Map && errors.values.isNotEmpty) {
+      final first = errors.values.first;
+
+      if (first is List && first.isNotEmpty) {
+        return '${first.first}';
+      }
+
+      return '$first';
+    }
+
+    final message = response['message'];
+
+    return message == null || '$message'.isEmpty ? fallback : '$message';
+  }
+
   static Map<String, dynamic> mapOf(Map<String, dynamic> res) {
     final data = res['data'];
     return data is Map<String, dynamic> ? data : <String, dynamic>{};

@@ -15,6 +15,7 @@ Route::post('internal/scheduler/run', [InternalSchedulerController::class, 'run'
     ->middleware('throttle:scheduler');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
+    Route::get('auth/terms', [AuthController::class, 'terms']);
     Route::post('auth/register', [AuthController::class, 'register']);
     Route::post('auth/login', [AuthController::class, 'login']);
     Route::get('creators', [MarketplaceController::class, 'creators']);
@@ -45,6 +46,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('conversations/{uuid}/messages', [MarketplaceController::class, 'messages']);
         Route::post('conversations/{uuid}/messages', [WorkspaceApiController::class, 'postMessage']);
 
+        Route::post('roles/apply', [WorkspaceApiController::class, 'applyForRole']);
         Route::post('devices', [WorkspaceApiController::class, 'registerDevice']);
     });
 });

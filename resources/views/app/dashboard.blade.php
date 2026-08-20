@@ -26,7 +26,7 @@
             @else
                 <p class="stat">₹{{ number_format($availableMinor / 100, 2) }}</p>
             @endif
-            <p class="muted">{{ $paymentsConfigured ? __('Payment provider connected.') : __('Payment provider not configured.') }}</p>
+            <p class="muted">{{ $paymentsConfigured ? __('Payments are open.') : __('Payments are not available yet. Nothing can be charged or paid out until they are.') }}</p>
         </article>
     </div>
 @else
