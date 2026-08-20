@@ -253,3 +253,42 @@ are not a policy.
 - [ ] Object storage bucket private, signed URLs working
 - [ ] Legal pages replaced with approved text
 - [ ] Database backups scheduled **and a restore tested**
+
+## Deploy procedure
+
+Run from a shell on the server, in this order:
+
+```bash
+cd ~/vidlix
+git checkout -- $(git diff --name-only | grep '\.gitignore$')   # framework rewrites these
+git pull --ff-only origin main
+php artisan migrate --force
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+```
+
+### Close the site first
+
+There is a window between `git pull` and the end of `migrate` where the new
+code is live against the old schema. A real deploy hit it: requests in that
+gap logged `Base table or view not found: feature_flags`, because the new
+homepage asks for a table the migration had not yet created.
+
+Turn on maintenance mode in the admin panel before pulling and off after the
+caches are rebuilt. Staff, sign-in and provider webhooks stay open, so a
+payment confirmation arriving mid-deploy is still accepted.
+
+### Backing up before a migration
+
+`mysqldump` with the credentials read out of `.env` by shell fails with a 1045:
+the password there is wrapped in quotes and Laravel strips them, so the shell
+and the application disagree about what the password is. Let the application
+answer instead — boot it and write a defaults file from
+`config('database.connections.mysql')`, then pass that to `mysqldump
+--defaults-extra-file`. Note that a script run from `/tmp` cannot use `__DIR__`
+to find `vendor/`; pass the application path in explicitly.
+
+### CACHE_STORE is `database` in production
+
+Which means anything cached is serialized. Never put an object in the cache
+that a fresh process might unserialize before its class is loaded - it returns
+as `__PHP_Incomplete_Class` and the page 500s. Cache arrays.
