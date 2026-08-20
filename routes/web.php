@@ -110,6 +110,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
         Route::get('/inbox/{uuid}', [InboxController::class, 'show'])->name('inbox.show');
         Route::post('/inbox/{uuid}/reply', [InboxController::class, 'reply'])->name('inbox.reply');
+        Route::post('/inbox/{uuid}/archive', [InboxController::class, 'archive'])->name('inbox.archive');
+        Route::post('/inbox/{uuid}/mute', [InboxController::class, 'mute'])->name('inbox.mute');
+        Route::post('/inbox/{uuid}/report', [InboxController::class, 'report'])->name('inbox.report');
+        Route::post('/inbox/{uuid}/block', [InboxController::class, 'block'])->name('inbox.block');
         Route::redirect('/creator/inbox', '/inbox');
         Route::get('/creator/inbox/{uuid}', fn (string $uuid) => redirect('/inbox/'.$uuid));
         Route::get('/creator/public-page', [PublicPageStudioController::class, 'edit'])->name('creator.public-page');
@@ -212,6 +216,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/disputes', [AdminOpsController::class, 'disputes'])->name('disputes')->middleware('can:disputes.resolve');
         Route::post('/disputes/{dispute}', [AdminOpsController::class, 'resolveDispute'])->name('disputes.resolve')->middleware('can:disputes.resolve');
         Route::get('/tickets', [AdminOpsController::class, 'tickets'])->name('tickets')->middleware('can:support.view');
+        Route::get('/reports', [AdminOpsController::class, 'reports'])->name('reports')->middleware('can:support.view');
+        Route::post('/reports/{report}', [AdminOpsController::class, 'resolveReport'])->name('reports.resolve')->middleware('can:support.reply');
 
         // One member, everything about them, on one page.
         Route::get('/members', [AdminMemberController::class, 'index'])->name('members')->middleware('can:users.view');

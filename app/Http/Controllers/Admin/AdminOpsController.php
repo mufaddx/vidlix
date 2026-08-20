@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BrandProfile;
 use App\Models\Campaign;
+use App\Models\ConversationReport;
 use App\Models\Dispute;
 use App\Models\EditorProfile;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\Audit\AuditLogger;
 use App\Services\Marketplace\MarketplaceEngine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -92,6 +94,46 @@ class AdminOpsController extends Controller
     public function disputes(): View
     {
         return view('admin.disputes', ['items' => Dispute::query()->latest()->get()]);
+    }
+
+    /**
+     * Conversations members have reported.
+     *
+     * Open ones first and oldest first within that, because the complaint that
+     * has been waiting longest is the one most likely to have been forgotten.
+     */
+    public function reports(): View
+    {
+        return view('admin.reports', [
+            'items' => ConversationReport::query()
+                ->with(['reporter:id,name,email', 'conversation'])
+                ->orderByRaw("case status when 'open' then 0 when 'reviewing' then 1 else 2 end")
+                ->orderBy('created_at')
+                ->paginate(50),
+        ]);
+    }
+
+    public function resolveReport(Request $request, ConversationReport $report, AuditLogger $audit): RedirectResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', 'in:reviewing,actioned,dismissed'],
+            'review_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $report->update([
+            'status' => $data['status'],
+            'review_note' => $data['review_note'] ?? null,
+            'reviewed_by_user_id' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        // Moderation decisions are the kind somebody asks about months later,
+        // so who decided what, and when, is recorded rather than inferred.
+        $audit->record('conversation_report.reviewed', $report, [
+            'status' => $data['status'],
+        ], $request->user()->id);
+
+        return back()->with('status', __('Report updated.'));
     }
 
     public function resolveDispute(Request $request, Dispute $dispute): RedirectResponse

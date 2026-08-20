@@ -7,15 +7,25 @@
     @foreach($filters as $key)
         <a class="inbox-tab {{ $filter === $key ? 'active' : '' }}"
            @if($filter === $key) aria-current="page" @endif
-           href="{{ route('inbox', array_filter(['filter' => $key, 'q' => $search])) }}">
+           href="{{ route('inbox', array_filter(['filter' => $key, 'q' => $search, 'archived' => $archived ? 1 : null])) }}">
             {{ __(ucfirst($key)) }}
             <span class="inbox-tab-count">{{ $counts[$key] ?? 0 }}</span>
         </a>
     @endforeach
 </nav>
 
+<p>
+    @if($archived)
+        <a class="btn secondary" href="{{ route('inbox', array_filter(['filter' => $filter, 'q' => $search])) }}">{{ __('Back to inbox') }}</a>
+        <span class="muted">{{ __('Showing what you have filed away.') }}</span>
+    @else
+        <a class="btn secondary" href="{{ route('inbox', array_filter(['filter' => $filter, 'q' => $search, 'archived' => 1])) }}">{{ __('Archived') }}</a>
+    @endif
+</p>
+
 <form class="inbox-search" method="get" action="{{ route('inbox') }}">
     <input type="hidden" name="filter" value="{{ $filter }}">
+    @if($archived)<input type="hidden" name="archived" value="1">@endif
     <label class="sr-only" for="inbox-q">{{ __('Search conversations') }}</label>
     <input id="inbox-q" type="search" name="q" value="{{ $search }}" placeholder="{{ __('Search subject or sender') }}">
     <button class="btn secondary" type="submit">{{ __('Search') }}</button>
@@ -24,7 +34,11 @@
 @if($conversations->isEmpty())
     <p class="muted">
         @if($filter === 'all' && ! filled($search))
-            {{ __('No messages yet.') }}
+            @if($archived)
+                {{ __('Nothing filed away.') }}
+            @else
+                {{ __('No messages yet.') }}
+            @endif
         @else
             {{ __('No conversations match this filter.') }}
         @endif

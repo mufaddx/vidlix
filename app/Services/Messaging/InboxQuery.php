@@ -26,11 +26,18 @@ class InboxQuery
 
     /**
      * @param  string  $filter  one of FILTERS — what the other side is
+     * @param  bool  $archived  show what has been filed away instead of what has not
      */
-    public function forUser(User $user, string $filter = 'all', ?string $search = null, int $perPage = 25): LengthAwarePaginator
-    {
+    public function forUser(
+        User $user,
+        string $filter = 'all',
+        ?string $search = null,
+        int $perPage = 25,
+        bool $archived = false,
+    ): LengthAwarePaginator {
         return $this->base($user)
             ->when($this->normalise($filter) !== 'all', fn ($q) => $this->whereCounterpart($q, $user, $this->normalise($filter)))
+            ->where(fn ($q) => $this->whereArchived($q, $user, $archived))
             ->when(filled($search), fn ($q) => $q->where(function ($inner) use ($search) {
                 $inner->where('subject', 'like', '%'.$search.'%')
                     ->orWhere('conversation_uuid', $search)
@@ -38,21 +45,100 @@ class InboxQuery
                         ->orWhere('name', 'like', '%'.$search.'%'));
             }))
             ->with(['externalContact', 'participants.user:id,name'])
+            ->orderByRaw($this->rolePriorityOrder($user), $this->rolePriorityBindings($user))
             ->latest('last_message_at')
             ->paginate($perPage)
             ->withQueryString();
     }
 
     /** @return array<string, int> counts per filter, for the tab labels */
-    public function counts(User $user): array
+    public function counts(User $user, bool $archived = false): array
     {
-        $counts = ['all' => $this->base($user)->count()];
+        $unfiled = fn () => $this->base($user)->where(fn ($q) => $this->whereArchived($q, $user, $archived));
+
+        $counts = ['all' => $unfiled()->count()];
 
         foreach (['creator', 'editor', 'brand'] as $role) {
-            $counts[$role] = $this->whereCounterpart($this->base($user), $user, $role)->count();
+            $counts[$role] = $this->whereCounterpart($unfiled(), $user, $role)->count();
         }
 
         return $counts;
+    }
+
+    /**
+     * The order a person's own kind of work comes first in.
+     *
+     * A creator opening the inbox wants creator threads at the top, then
+     * editors, then brands; an editor wants the reverse of the first two. It is
+     * done in SQL rather than after paging, because sorting a page is sorting
+     * whatever happened to be on it.
+     */
+    private function rolePriorityOrder(User $user): string
+    {
+        return '(select min(case cp.marketplace_role when ? then 0 when ? then 1 when ? then 2 else 3 end)'
+            .' from conversation_participants cp'
+            .' where cp.conversation_id = conversations.id and cp.user_id != ?) asc';
+    }
+
+    /** @return list<string|int> */
+    private function rolePriorityBindings(User $user): array
+    {
+        $own = $this->roleFor($user) ?? 'creator';
+
+        // Their own kind first, then the other two in a fixed order so the list
+        // does not reshuffle itself between visits.
+        $rest = array_values(array_diff(['creator', 'editor', 'brand'], [$own]));
+
+        return [$own, $rest[0], $rest[1], $user->id];
+    }
+
+    public function archive(User $user, Conversation $conversation, bool $archived): void
+    {
+        $this->participantRow($user, $conversation)?->update([
+            'archived_at' => $archived ? now() : null,
+        ]);
+    }
+
+    public function mute(User $user, Conversation $conversation, bool $muted): void
+    {
+        $this->participantRow($user, $conversation)?->update([
+            'muted_at' => $muted ? now() : null,
+        ]);
+    }
+
+    public function isArchived(User $user, Conversation $conversation): bool
+    {
+        return $this->participantRow($user, $conversation)?->archived_at !== null;
+    }
+
+    public function isMuted(User $user, Conversation $conversation): bool
+    {
+        return $this->participantRow($user, $conversation)?->muted_at !== null;
+    }
+
+    private function participantRow(User $user, Conversation $conversation): ?ConversationParticipant
+    {
+        return ConversationParticipant::query()
+            ->where('conversation_id', $conversation->id)
+            ->where('user_id', $user->id)
+            ->first();
+    }
+
+    /**
+     * Archive state is the caller's own, so this looks at their participant row
+     * only. A thread they own but were never added to counts as unarchived,
+     * which is why the absence of a row is treated as "not filed away".
+     */
+    private function whereArchived(Builder $query, User $user, bool $archived): Builder
+    {
+        $rows = ConversationParticipant::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('archived_at')
+            ->select('conversation_id');
+
+        return $archived
+            ? $query->whereIn('id', $rows)
+            : $query->whereNotIn('id', $rows);
     }
 
     /**

@@ -26,6 +26,7 @@ use App\Models\Proposal;
 use App\Models\ProposalVersion;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\UserBlock;
 use App\Models\Withdrawal;
 use App\Notifications\GenericNotice;
 use App\Services\Audit\AuditLogger;
@@ -489,6 +490,17 @@ class MarketplaceEngine
 
     public function startInternalChat(User $a, User $b, string $subject): Conversation
     {
+        /*
+         | A block has to stop a thread from starting, or it is a button that
+         | does nothing. It is checked in both directions: whether the sender
+         | blocked the recipient or the other way round, the two of them have
+         | said they do not want this conversation.
+         |
+         | Existing threads are left alone deliberately — blocking should not
+         | delete a history that may be the evidence of why it was needed.
+         */
+        abort_if($this->blockedBetween($a, $b), 403, __('You cannot start a conversation with this person.'));
+
         $conversation = Conversation::query()->create([
             'conversation_uuid' => (string) Str::uuid(),
             'channel' => 'internal',
@@ -504,6 +516,15 @@ class MarketplaceEngine
         $conversation->participants()->create(['user_id' => $b->id, 'role' => 'member', 'marketplace_role' => $inbox->roleFor($b)]);
 
         return $conversation;
+    }
+
+    /** Has either of these two blocked the other? */
+    public function blockedBetween(User $a, User $b): bool
+    {
+        return UserBlock::query()
+            ->where(fn ($q) => $q->where('user_id', $a->id)->where('blocked_user_id', $b->id))
+            ->orWhere(fn ($q) => $q->where('user_id', $b->id)->where('blocked_user_id', $a->id))
+            ->exists();
     }
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Services\Notifications;
 
 use App\Contracts\PushProviderInterface;
+use App\Models\Conversation;
+use App\Models\ConversationParticipant;
 use App\Models\DeviceToken;
 use App\Models\NotificationPreference;
 use App\Models\User;
@@ -67,6 +69,34 @@ class Notifier
         }
 
         return ['stored' => true, 'push' => $result['status']];
+    }
+
+    /**
+     * Tell somebody about a thread, unless they have muted it.
+     *
+     * Muting silences the notification and nothing else: the message is still
+     * delivered, still stored, and still unread in the inbox. Someone who mutes
+     * a noisy thread is asking to stop being interrupted by it, not to stop
+     * receiving it.
+     *
+     * @param  array<string, string>  $data
+     * @return array{stored: bool, push: string}
+     */
+    public function sendAbout(User $user, Conversation $conversation, string $event, string $title, string $body, array $data = []): array
+    {
+        $muted = ConversationParticipant::query()
+            ->where('conversation_id', $conversation->id)
+            ->where('user_id', $user->id)
+            ->whereNotNull('muted_at')
+            ->exists();
+
+        if ($muted) {
+            return ['stored' => false, 'push' => 'muted_by_member'];
+        }
+
+        return $this->send($user, $event, $title, $body, $data + [
+            'conversation_uuid' => (string) $conversation->conversation_uuid,
+        ]);
     }
 
     /** Whether the member wants this event on this channel. */

@@ -57,6 +57,7 @@ final class AdminNavigation
                     ['route' => 'admin.help-desk', 'label' => 'Help desk', 'ability' => Ability::SUPPORT_VIEW],
                     ['route' => 'admin.finance', 'label' => 'Finance', 'ability' => Ability::FINANCE_VIEW],
                     ['route' => 'admin.disputes', 'label' => 'Disputes', 'ability' => Ability::DISPUTES_RESOLVE],
+                    ['route' => 'admin.reports', 'label' => 'Reported threads', 'ability' => Ability::SUPPORT_VIEW],
                     ['route' => 'admin.cms', 'label' => 'Website copy', 'ability' => Ability::CMS_MANAGE],
                     ['route' => 'admin.employees', 'label' => 'Employees', 'ability' => Ability::EMPLOYEES_MANAGE],
                     ['route' => 'admin.health', 'label' => 'System health', 'ability' => Ability::PLATFORM_MANAGE],
