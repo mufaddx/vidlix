@@ -35,11 +35,45 @@ The adapters are covered by tests that fake the provider HTTP layer, so
 `php artisan test` exercises the real settlement, routing and sync logic without
 any credentials.
 
+## Browser tests
+
+`php artisan test` cannot see JavaScript, so the reveal button, the checkbox
+sizing, the hover states and the page layout are covered by Playwright instead:
+
+```
+npm install
+npx playwright install chromium
+php artisan key:generate --env=e2e --force
+touch database/e2e.sqlite && php artisan migrate --env=e2e --force
+npm run e2e
+```
+
+Laravel Dusk is not used because it requires guzzle ^7.5 and this project runs
+guzzle 8; downgrading a library the application depends on in order to install a
+test tool is the wrong way round.
+
+`.env.e2e` is committed and deliberately holds no provider credentials, so a
+browser run cannot reach a real payment, email or Meta API. It also ships with
+an empty `APP_KEY` — generate one locally with the command above. That write
+makes the file look modified forever, so mark it ignored in your checkout:
+
+```
+git update-index --skip-worktree .env.e2e
+```
+
+These tests earn their keep: the first run found a cache bug that made every
+page 500 under the file and database cache drivers, which no in-process test
+could have caught.
+
 ## What is and is not finished
 
 The marketplace engines, the live provider adapters, the `/api/v1` surface and
-the Flutter client are all implemented. What remains is operational rather than
-code: provider accounts and KYC, Meta app review, email domain DNS, and the
-Hostinger production checklist in `docs/DEPLOYMENT_HOSTINGER.md`. The legal CMS
-pages still carry placeholder bodies and need approved text before real money
-moves.
+the Flutter client are all implemented, along with feature switches, a
+maintenance gate, a measured health page, two-factor authentication, device
+notifications with per-event preferences, Turnstile on the public forms and
+daily reminders.
+
+What remains is operational rather than code: provider accounts and KYC, the
+Razorpay webhook secret (without it no payment can be confirmed), RazorpayX
+activation, Meta app review, email domain DNS, and the Hostinger production
+checklist in `docs/DEPLOYMENT_HOSTINGER.md`.
