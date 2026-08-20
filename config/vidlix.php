@@ -4,6 +4,22 @@ return [
     'currency' => env('VIDLIX_CURRENCY', 'INR'),
     'public_form_honeypot' => 'company_website',
 
+    /*
+     | The Android build the app should be running.
+     |
+     | Vidlix is not on Play Store yet, so the app cannot be updated by the
+     | store. It asks the server what the current build is and offers to fetch
+     | it, which is why these live here rather than being baked into the app:
+     | a build that is already installed cannot tell itself it is out of date.
+     */
+    'app' => [
+        'android_version' => env('APP_ANDROID_VERSION', '1.0.2'),
+        // Below this, the app stops and insists: used only for a build that is
+        // actually broken against the current API, never for a nice-to-have.
+        'android_minimum' => env('APP_ANDROID_MINIMUM', '1.0.2'),
+        'android_notes' => env('APP_ANDROID_NOTES', 'Sign-up now works, passwords can be shown, and the terms are readable in full.'),
+    ],
+
     'providers' => [
         'email' => env('EMAIL_PROVIDER', 'unconfigured'),
         'payment' => env('PAYMENT_PROVIDER', 'unconfigured'),

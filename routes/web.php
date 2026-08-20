@@ -24,6 +24,7 @@ use App\Http\Controllers\Auth\PasswordResetFlowController;
 use App\Http\Controllers\Auth\SignupFlowController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Managers\ManagerInvitationController;
+use App\Http\Controllers\Site\AppDownloadController;
 use App\Http\Controllers\Site\CreatorPublicController;
 use App\Http\Controllers\Site\EditorPublicController;
 use App\Http\Controllers\Site\HomeController;
@@ -41,6 +42,7 @@ Route::post('/editors/{username}/enquire', [EditorPublicController::class, 'enqu
     ->middleware(['throttle:public-form', 'feature:public_enquiries', 'turnstile'])
     ->name('editors.enquire');
 Route::get('/brands', [HomeController::class, 'brands'])->name('brands.index');
+Route::get('/download/android', [AppDownloadController::class, 'android'])->name('app.download.android');
 Route::get('/brands/{slug}', [HomeController::class, 'brandShow'])->name('brands.public');
 Route::get('/campaigns', [HomeController::class, 'campaigns'])->name('campaigns.index');
 Route::get('/blog', [HomeController::class, 'blog'])->name('blog.index');

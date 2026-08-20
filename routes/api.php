@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\InternalSchedulerController;
+use App\Http\Controllers\Api\V1\AppReleaseController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\MarketplaceController;
 use App\Http\Controllers\Api\V1\WorkspaceApiController;
@@ -15,6 +16,7 @@ Route::post('internal/scheduler/run', [InternalSchedulerController::class, 'run'
     ->middleware('throttle:scheduler');
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
+    Route::get('app/android', [AppReleaseController::class, 'android']);
     Route::get('auth/terms', [AuthController::class, 'terms']);
     Route::post('auth/register', [AuthController::class, 'register']);
     Route::post('auth/login', [AuthController::class, 'login']);

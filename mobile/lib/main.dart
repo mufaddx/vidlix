@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'update.dart';
 import 'screens/login_screen.dart';
 import 'screens/shell_screen.dart';
 import 'theme.dart';
@@ -42,6 +43,16 @@ class _GateState extends State<Gate> {
     _boot();
   }
 
+  /// Checked once the first screen is on the display, so a slow or unreachable
+  /// server never delays the app opening.
+  void _checkForUpdate() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      await AppUpdate(api).promptIfOutdated(context);
+    });
+  }
+
   Future<void> _boot() async {
     final token = await api.token();
     if (token == null) {
@@ -49,6 +60,8 @@ class _GateState extends State<Gate> {
         signedIn = false;
         loading = false;
       });
+      _checkForUpdate();
+
       return;
     }
 
@@ -63,6 +76,7 @@ class _GateState extends State<Gate> {
       signedIn = me['success'] == true;
       loading = false;
     });
+    _checkForUpdate();
   }
 
   @override
