@@ -37,6 +37,9 @@ strix_runs/
 /database/e2e.sqlite
 
 # Ruflo runtime state. It belongs to the machine, not to the project.
-/.claude-flow
-/.swarm
-/.hive-mind
+.claude-flow/
+.swarm/
+.hive-mind/
+
+# Built app binaries. A 49MB APK does not belong in git history.
+/dist
