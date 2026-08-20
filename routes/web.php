@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminMemberController;
 use App\Http\Controllers\Admin\AdminOpsController;
 use App\Http\Controllers\Admin\AdminPlatformController;
 use App\Http\Controllers\App\ContactFormController;
+use App\Http\Controllers\App\CustomDomainController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DiscoveryController;
 use App\Http\Controllers\App\InboxController;
@@ -134,6 +135,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('/contact-form/fields/{key}', [ContactFormController::class, 'removeField'])->name('app.contact-form.fields.remove');
         Route::post('/contact-form/reorder', [ContactFormController::class, 'reorder'])->name('app.contact-form.reorder');
         Route::post('/contact-form/toggle', [ContactFormController::class, 'toggle'])->name('app.contact-form.toggle');
+
+        Route::get('/custom-domain', [CustomDomainController::class, 'edit'])->name('app.custom-domain');
+        Route::post('/custom-domain', [CustomDomainController::class, 'connect'])->name('app.custom-domain.connect');
+        Route::post('/custom-domain/check', [CustomDomainController::class, 'refresh'])->name('app.custom-domain.check');
+        Route::delete('/custom-domain', [CustomDomainController::class, 'disconnect'])->name('app.custom-domain.disconnect');
 
         Route::get('/roles', [RoleApplicationController::class, 'index'])->name('app.roles');
         Route::post('/roles/apply', [RoleApplicationController::class, 'apply'])->name('app.roles.apply');

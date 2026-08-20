@@ -43,6 +43,7 @@ return [
         'instagram' => env('INSTAGRAM_PROVIDER', 'unconfigured'),
         'storage' => env('FILESYSTEM_DISK', 'local'),
         'push' => env('PUSH_PROVIDER', 'unconfigured'),
+        'custom_domains' => env('CUSTOM_DOMAIN_PROVIDER', 'unconfigured'),
         'broadcast' => env('BROADCAST_CONNECTION', 'log'),
     ],
 

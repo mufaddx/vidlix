@@ -11,6 +11,7 @@
             <a class="{{ request()->routeIs('inbox*') ? 'active' : '' }}" href="{{ route('inbox') }}">{{ __('Inbox') }}</a>
             <a class="{{ request()->routeIs('creator.public-page') ? 'active' : '' }}" href="{{ route('creator.public-page') }}">{{ __('Public page') }}</a>
             <a class="{{ request()->routeIs('app.contact-form') ? 'active' : '' }}" href="{{ route('app.contact-form') }}">{{ __('Contact form') }}</a>
+            <a class="{{ request()->routeIs('app.custom-domain') ? 'active' : '' }}" href="{{ route('app.custom-domain') }}">{{ __('Custom domain') }}</a>
             <a href="{{ route('app.instagram') }}">{{ __('Instagram') }}</a>
             <a href="{{ route('app.automations') }}">{{ __('Automation') }}</a>
         @endif

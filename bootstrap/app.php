@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureFeature;
 use App\Http\Middleware\EnsureWorkspace;
 use App\Http\Middleware\MaintenanceGate;
+use App\Http\Middleware\ResolveCustomDomain;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyTurnstile;
 use App\Support\RequestId;
@@ -28,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(AssignRequestId::class);
         $middleware->append(SecurityHeaders::class);
+        // Before the maintenance gate and before routing: a request on somebody
+        // else's hostname must be narrowed to their contact form, or refused,
+        // before anything downstream gets a chance to serve it something wider.
+        $middleware->append(ResolveCustomDomain::class);
         // Runs after the security headers so a closed site still sends them.
         $middleware->append(MaintenanceGate::class);
         $middleware->alias([

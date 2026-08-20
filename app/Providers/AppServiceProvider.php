@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Contracts\CustomHostnameProviderInterface;
 use App\Contracts\EmailProviderInterface;
 use App\Contracts\InstagramProviderInterface;
 use App\Contracts\PaymentProviderInterface;
 use App\Contracts\PayoutProviderInterface;
 use App\Contracts\PushProviderInterface;
 use App\Models\User;
+use App\Services\Integrations\Domains\UnconfiguredHostnameProvider;
 use App\Services\Integrations\Email\ResendEmailProvider;
 use App\Services\Integrations\Email\SendGridEmailProvider;
 use App\Services\Integrations\Email\SmtpEmailProvider;
@@ -62,6 +64,10 @@ class AppServiceProvider extends ServiceProvider
             'fcm' => FcmPushProvider::class,
             'firebase' => FcmPushProvider::class,
         ],
+        // No live driver yet. The contract and the fallback exist so the
+        // feature can be built and tested against a provider that honestly
+        // refuses, rather than against a stub that pretends to succeed.
+        CustomHostnameProviderInterface::class => [],
     ];
 
     private const FALLBACKS = [
@@ -70,6 +76,7 @@ class AppServiceProvider extends ServiceProvider
         EmailProviderInterface::class => UnconfiguredEmailProvider::class,
         InstagramProviderInterface::class => UnconfiguredInstagramProvider::class,
         PushProviderInterface::class => UnconfiguredPushProvider::class,
+        CustomHostnameProviderInterface::class => UnconfiguredHostnameProvider::class,
     ];
 
     private const CONFIG_KEYS = [
@@ -78,6 +85,7 @@ class AppServiceProvider extends ServiceProvider
         EmailProviderInterface::class => 'vidlix.providers.email',
         InstagramProviderInterface::class => 'vidlix.providers.instagram',
         PushProviderInterface::class => 'vidlix.providers.push',
+        CustomHostnameProviderInterface::class => 'vidlix.providers.custom_domains',
     ];
 
     public function register(): void
