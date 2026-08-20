@@ -22,6 +22,7 @@ class Campaign extends Model
         ];
     }
 
+    /** @return BelongsTo<BrandProfile, $this> */
     public function brand(): BelongsTo
     {
         return $this->belongsTo(BrandProfile::class, 'brand_profile_id');

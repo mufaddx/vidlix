@@ -17,6 +17,7 @@ class BrandProfile extends Model
         'authorized_person_email', 'authorized_person_phone',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

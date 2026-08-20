@@ -28,3 +28,11 @@ Schedule::command('queue:work --stop-when-empty --max-time=55 --tries=3')
     ->everyMinute()
     ->withoutOverlapping(5)
     ->runInBackground();
+
+/*
+ | Reminders go out once a day rather than hourly: a nudge that arrives every
+ | hour is noise, and noise gets muted. The command guards against sending the
+ | same reminder twice, so a scheduler that fires more than once - which the
+ | HTTP-triggered one can - does not turn one nudge into several.
+ */
+Schedule::command('vidlix:reminders')->dailyAt('09:00');

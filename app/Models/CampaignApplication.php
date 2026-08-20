@@ -17,11 +17,13 @@ class CampaignApplication extends Model
         return ['analytics_snapshot' => 'array'];
     }
 
+    /** @return BelongsTo<Campaign, $this> */
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(Campaign::class);
     }
 
+    /** @return BelongsTo<CreatorProfile, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(CreatorProfile::class, 'creator_profile_id');
