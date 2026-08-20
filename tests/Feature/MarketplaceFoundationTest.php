@@ -28,7 +28,7 @@ class MarketplaceFoundationTest extends TestCase
 
     public function test_public_inquiry_creates_conversation_without_fake_email_send(): void
     {
-        $this->post('/u/mursalim/inquire', [
+        $this->post('/mursalim/contact', [
             'name' => 'Rahul',
             'email' => 'rahul@abcbrand.com',
             'subject' => 'Summer Campaign',
@@ -47,7 +47,7 @@ class MarketplaceFoundationTest extends TestCase
 
     public function test_creator_cannot_open_another_creator_conversation(): void
     {
-        $this->post('/u/mursalim/inquire', [
+        $this->post('/mursalim/contact', [
             'name' => 'Rahul',
             'email' => 'rahul@abcbrand.com',
             'subject' => 'Private deal',

@@ -120,3 +120,85 @@
         button.setAttribute('title', show ? 'Hide password' : 'Show password');
     });
 })();
+
+/*
+ * Copy-to-clipboard for anything carrying data-copy.
+ *
+ * The button says what happened rather than staying silent, because a copy that
+ * gives no feedback is indistinguishable from one that failed. It also restores
+ * its own label, so the page does not end up permanently reading "Copied".
+ *
+ * navigator.clipboard needs a secure context; over plain HTTP it is simply
+ * absent, so there is a selection-based fallback rather than a dead button.
+ */
+(function () {
+    var RESTORE_MS = 2000;
+
+    function flash(button, message) {
+        if (button.getAttribute('data-copy-busy') === '1') {
+            return;
+        }
+
+        var original = button.textContent;
+
+        button.setAttribute('data-copy-busy', '1');
+        button.textContent = message;
+
+        window.setTimeout(function () {
+            button.textContent = original;
+            button.removeAttribute('data-copy-busy');
+        }, RESTORE_MS);
+    }
+
+    function fallbackCopy(text) {
+        var field = document.createElement('textarea');
+
+        field.value = text;
+        field.setAttribute('readonly', '');
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+
+        document.body.appendChild(field);
+        field.select();
+
+        var copied = false;
+
+        try {
+            copied = document.execCommand('copy');
+        } catch (e) {
+            copied = false;
+        }
+
+        document.body.removeChild(field);
+
+        return copied;
+    }
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest ? event.target.closest('[data-copy]') : null;
+
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+
+        var text = button.getAttribute('data-copy');
+
+        if (!text) {
+            return;
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+                flash(button, 'Copied');
+            }, function () {
+                flash(button, fallbackCopy(text) ? 'Copied' : 'Press Ctrl+C');
+            });
+
+            return;
+        }
+
+        flash(button, fallbackCopy(text) ? 'Copied' : 'Press Ctrl+C');
+    });
+})();

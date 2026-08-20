@@ -23,21 +23,22 @@ use App\Http\Controllers\Auth\PasswordResetFlowController;
 use App\Http\Controllers\Auth\SignupFlowController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Site\AppDownloadController;
-use App\Http\Controllers\Site\CreatorPublicController;
-use App\Http\Controllers\Site\EditorPublicController;
 use App\Http\Controllers\Site\HomeController;
+use App\Http\Controllers\Site\PublicProfileController;
 use App\Http\Controllers\Webhooks\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/creators', [HomeController::class, 'creators'])->name('creators.index');
 Route::get('/editors', [HomeController::class, 'editors'])->name('editors.index');
-Route::get('/editors/{username}', [EditorPublicController::class, 'show'])->name('editors.public');
-// The spec writes this link in the singular; the plural is canonical because it
-// matches /creators. Both resolve so a printed or pasted link never dead-ends.
-Route::get('/editor/{username}', fn (string $username) => redirect()->route('editors.public', $username));
-Route::post('/editors/{username}/enquire', [EditorPublicController::class, 'enquire'])
-    ->middleware(['throttle:public-form', 'feature:public_enquiries', 'turnstile'])
+/*
+ | The old role-prefixed profile addresses. A public profile now lives at
+ | vidlix.in/{username} with no role in it, but these are printed in bios and
+ | pasted into messages, so they redirect permanently rather than break.
+ */
+Route::permanentRedirect('/editors/{username}', '/{username}')->name('editors.public');
+Route::permanentRedirect('/editor/{username}', '/{username}');
+Route::post('/editors/{username}/enquire', fn (string $username) => redirect()->route('profile.contact', $username))
     ->name('editors.enquire');
 Route::get('/brands', [HomeController::class, 'brands'])->name('brands.index');
 Route::get('/download/android', [AppDownloadController::class, 'android'])->name('app.download.android');
@@ -47,8 +48,9 @@ Route::get('/blog', [HomeController::class, 'blog'])->name('blog.index');
 Route::get('/blog/{slug}', [HomeController::class, 'post'])->name('blog.show');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/p/{slug}', [HomeController::class, 'page'])->name('pages.show');
-Route::get('/u/{username}', [CreatorPublicController::class, 'show'])->name('creators.public');
-Route::post('/u/{username}/inquire', [CreatorPublicController::class, 'inquire'])->middleware(['throttle:public-form', 'feature:public_enquiries', 'turnstile'])->name('creators.inquire');
+Route::permanentRedirect('/u/{username}', '/{username}')->name('creators.public');
+Route::post('/u/{username}/inquire', fn (string $username) => redirect()->route('profile.contact', $username))
+    ->name('creators.inquire');
 
 Route::middleware('guest')->group(function () {
     /*
@@ -236,3 +238,24 @@ Route::middleware('auth')->group(function () {
         Route::post('/employees/{employee}/status', [AdminEmployeeController::class, 'updateStatus'])->name('employees.status')->middleware('can:employees.manage');
     });
 });
+
+/*
+ | vidlix.in/{username} — the public profile, and the last route in the file.
+ |
+ | Its position is the point: the router tries every real path first, so a
+ | handle can never shadow a page the application owns. The reserved list in the
+ | registry covers the paths that do not exist yet, and the pattern keeps the
+ | catch-all from swallowing files like favicon.ico.
+ */
+Route::get('/{username}', [PublicProfileController::class, 'show'])
+    ->where('username', '[A-Za-z0-9._-]+')
+    ->name('profile.show');
+
+Route::get('/{username}/contact', [PublicProfileController::class, 'contact'])
+    ->where('username', '[A-Za-z0-9._-]+')
+    ->name('profile.contact');
+
+Route::post('/{username}/contact', [PublicProfileController::class, 'submit'])
+    ->where('username', '[A-Za-z0-9._-]+')
+    ->middleware(['throttle:public-form', 'feature:public_enquiries', 'turnstile'])
+    ->name('profile.contact.submit');

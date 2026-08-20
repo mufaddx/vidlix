@@ -132,7 +132,7 @@
     <div class="grid">
         @forelse($featured->isNotEmpty() ? $featured : $topCreators as $item)
             @php $creator = $item->creatorProfile ?? $item; @endphp
-            <a class="card" href="{{ route('creators.public', $creator->username) }}">
+            <a class="card" href="{{ route('profile.show', $creator->username) }}">
                 <span class="avatar" aria-hidden="true">{{ strtoupper(substr($creator->display_name, 0, 1)) }}</span>
                 <strong>{{ $creator->display_name }}</strong>
                 <p class="muted">{{ '@'.$creator->username }}</p>
@@ -154,7 +154,7 @@
     </div>
     <div class="grid">
         @forelse($topEditors as $editor)
-            <a class="card" href="{{ route('editors.public', $editor->username) }}">
+            <a class="card" href="{{ route('profile.show', $editor->username) }}">
                 <span class="avatar" aria-hidden="true">{{ strtoupper(substr($editor->display_name, 0, 1)) }}</span>
                 <strong>{{ $editor->display_name }}</strong>
                 <p class="muted">{{ implode(' · ', $editor->specializations ?? []) }}</p>

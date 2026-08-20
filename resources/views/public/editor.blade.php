@@ -1,10 +1,20 @@
 @extends('layouts.public')
-@section('title', $editor->display_name.' — '.__('Editor'))
+@section('title', $editor->display_name.' — '.__('Editor on Vidlix'))
+@section('meta_description', \Illuminate\Support\Str::limit(strip_tags($editor->bio ?? __('Work with :name on Vidlix.', ['name' => $editor->display_name])), 155))
+@section('og_type', 'profile')
+@section('og_title', $editor->display_name)
+@section('canonical', \App\Support\PublicUrl::profile($editor->username))
 @section('content')
+
+@php($publicUrl = \App\Support\PublicUrl::profile($editor->username))
 <section class="wrap page-hero">
     <p class="kicker">{{ __('Verified editor') }}</p>
     <h1>{{ $editor->display_name }}</h1>
     <p class="lede">&#64;{{ $editor->username }}</p>
+    <p>
+        <button class="btn secondary" type="button" data-copy="{{ $publicUrl }}">{{ __('Copy link') }}</button>
+        <a class="btn secondary" href="{{ \App\Support\PublicUrl::contact($editor->username) }}">{{ __('Contact') }}</a>
+    </p>
 </section>
 
 <section class="wrap section">
@@ -33,7 +43,7 @@
             @if($errors->any())<p class="error">{{ $errors->first() }}</p>@endif
 
             @if($editor->accepts_inquiries)
-                <form class="form" method="post" action="{{ route('editors.enquire', $editor->username) }}">@csrf
+                <form class="form" method="post" action="{{ route('profile.contact.submit', $editor->username) }}">@csrf
                     <label for="name">{{ __('Your name') }}</label>
                     <input id="name" name="name" required>
 

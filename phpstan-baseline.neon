@@ -85,10 +85,16 @@ parameters:
 			path: app/Http/Controllers/App/ProjectFileController.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$display_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Site/PublicProfileController.php
+
+		-
 			message: '#^Using nullsafe property access "\?\-\>schema_json" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Site/CreatorPublicController.php
+			count: 2
+			path: app/Http/Controllers/Site/PublicProfileController.php
 
 		-
 			message: '#^Method App\\Models\\ContactForm\:\:publishedVersion\(\) should return App\\Models\\ContactFormVersion\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
@@ -119,6 +125,12 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Services/Auth/OtpService.php
+
+		-
+			message: '#^Parameter \#1 \$user of method App\\Services\\Identity\\UsernameRegistry\:\:claim\(\) expects App\\Models\\User, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Creator/CreatorOnboardingService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'

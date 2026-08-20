@@ -148,9 +148,9 @@ class DiscoveryAndPublicPagesTest extends TestCase
             'accepts_inquiries' => true,
         ]);
 
-        $this->get('/editors/sharpcut')->assertOk()->assertSee('What do you need edited?', false);
+        $this->get('/sharpcut')->assertOk()->assertSee('What do you need edited?', false);
 
-        $this->post('/editors/sharpcut/enquire', [
+        $this->post('/sharpcut/contact', [
             'name' => 'Rahul',
             'email' => 'rahul@brand.test',
             'subject' => 'Documentary cut',
@@ -172,7 +172,7 @@ class DiscoveryAndPublicPagesTest extends TestCase
             'application_status' => 'approved', 'visibility' => 'public', 'accepts_inquiries' => true,
         ]);
 
-        $this->post('/editors/botbait/enquire', [
+        $this->post('/botbait/contact', [
             'name' => 'Bot', 'email' => 'bot@spam.test', 'subject' => 'x', 'message' => 'y',
             config('vidlix.public_form_honeypot') => 'filled-in',
         ])->assertSessionHasErrors('form');

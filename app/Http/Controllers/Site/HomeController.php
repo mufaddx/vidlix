@@ -94,7 +94,7 @@ class HomeController extends Controller
             'title' => __('Editors'),
             'empty' => __('No approved editors yet.'),
             'items' => $editors,
-            'href' => fn ($e) => route('editors.public', $e->username),
+            'href' => fn ($e) => route('profile.show', $e->username),
             'name' => fn ($e) => $e->display_name,
             'meta' => fn ($e) => '@'.$e->username,
         ]);

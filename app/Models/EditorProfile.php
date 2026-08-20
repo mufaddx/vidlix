@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistersUsername;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EditorProfile extends Model
 {
+    use RegistersUsername;
+
+    public function registryProfileType(): string
+    {
+        return 'editor';
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

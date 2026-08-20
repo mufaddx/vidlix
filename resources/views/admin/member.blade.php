@@ -48,7 +48,7 @@
     <div class="a-panel-head">{{ __('Influencer profile') }}</div>
     <dl class="a-facts">
         <dt>{{ __('Display name') }}</dt><dd>{{ $member->creatorProfile->display_name }}</dd>
-        <dt>{{ __('Public URL') }}</dt><dd>/u/{{ $member->creatorProfile->username }}</dd>
+        <dt>{{ __('Public URL') }}</dt><dd>/{{ $member->creatorProfile->username }}</dd>
         <dt>{{ __('Followers') }}</dt>
         <dd>
             @if($member->creatorProfile->follower_count !== null)

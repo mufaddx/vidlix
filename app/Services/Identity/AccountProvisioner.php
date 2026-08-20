@@ -11,7 +11,10 @@ use Illuminate\Support\Str;
 
 class AccountProvisioner
 {
-    public function __construct(private CreatorOnboardingService $creators) {}
+    public function __construct(
+        private CreatorOnboardingService $creators,
+        private UsernameRegistry $usernames,
+    ) {}
 
     public function provisionRole(User $user, string $role): void
     {
@@ -41,12 +44,18 @@ class AccountProvisioner
         if ($user->editorProfile) {
             return;
         }
-        EditorProfile::query()->create([
+
+        // Suggested by the registry so it cannot collide with a creator handle.
+        $username = $this->usernames->suggestFrom($user->name, 'editor');
+
+        $profile = EditorProfile::query()->create([
             'user_id' => $user->id,
-            'username' => $this->unique('editor', $user->name),
+            'username' => $username,
             'display_name' => $user->name,
             'application_status' => 'not_applied',
         ]);
+
+        $this->usernames->claim($user, 'editor', $profile->id, $username);
     }
 
     private function brand(User $user): void

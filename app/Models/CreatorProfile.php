@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistersUsername;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CreatorProfile extends Model
 {
+    use RegistersUsername;
+
+    public function registryProfileType(): string
+    {
+        return 'creator';
+    }
+
     protected $fillable = [
         'user_id',
         'username',

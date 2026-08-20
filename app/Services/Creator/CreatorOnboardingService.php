@@ -7,14 +7,19 @@ use App\Models\ContactFormVersion;
 use App\Models\CreatorProfile;
 use App\Models\CreatorPublicPage;
 use App\Models\InstagramAccount;
+use App\Services\Identity\UsernameRegistry;
 use App\Support\DefaultContactFormSchema;
-use Illuminate\Support\Str;
 
 class CreatorOnboardingService
 {
+    public function __construct(private UsernameRegistry $registry) {}
+
     public function provision(int $userId, string $name): CreatorProfile
     {
-        $username = $this->uniqueUsername($name);
+        // The registry decides the handle, not this service. It is the only
+        // thing that knows what editors have already taken and which words the
+        // router owns.
+        $username = $this->registry->suggestFrom($name, 'creator');
 
         $profile = CreatorProfile::query()->create([
             'user_id' => $userId,
@@ -56,19 +61,8 @@ class CreatorOnboardingService
             'status' => 'disconnected',
         ]);
 
+        $this->registry->claim($profile->user, 'creator', $profile->id, $username);
+
         return $profile;
-    }
-
-    private function uniqueUsername(string $name): string
-    {
-        $base = Str::slug($name) ?: 'creator';
-        $candidate = $base;
-        $i = 1;
-        while (CreatorProfile::query()->where('username', $candidate)->exists()) {
-            $candidate = $base.$i;
-            $i++;
-        }
-
-        return $candidate;
     }
 }

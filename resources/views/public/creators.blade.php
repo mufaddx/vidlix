@@ -14,7 +14,7 @@
 <div class="wrap section">
     <div class="grid">
         @forelse($creators as $creator)
-            <a class="card" href="{{ route('creators.public', $creator->username) }}">
+            <a class="card" href="{{ route('profile.show', $creator->username) }}">
                 <span class="avatar" aria-hidden="true">{{ strtoupper(substr($creator->display_name, 0, 1)) }}</span>
                 <strong>{{ $creator->display_name }}</strong>
                 <p class="muted">{{ '@'.$creator->username }}</p>

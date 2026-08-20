@@ -2,13 +2,29 @@
 @section('title', __('Public page'))
 @section('content')
 <h1>{{ __('Public page studio') }}</h1>
-<p class="muted">{{ __('Drafts stay private until Publish. Live URL:') }}
+<p class="muted">{{ __('Drafts stay private until you publish. This is the link to share:') }}</p>
+
+@php($publicUrl = \App\Support\PublicUrl::profile($profile->username))
+<div class="card" style="margin-bottom:16px">
+    <p class="kicker">{{ __('Your public link') }}</p>
+    <p class="stat" style="font-size:18px;word-break:break-all">{{ $publicUrl }}</p>
+
     @if($profile->isPublished())
-        <a href="{{ route('creators.public', $profile->username) }}">{{ url('/u/'.$profile->username) }}</a>
+        <p class="muted">{{ __('Live now — anyone with this link can see your page.') }}</p>
     @else
-        /u/{{ $profile->username }}
+        {{-- Shown before publishing too: people want to know the address they
+             are going to get before they commit to it. --}}
+        <p class="muted">{{ __('Not published yet. This will be the address once you publish.') }}</p>
     @endif
-</p>
+
+    <p>
+        <button class="btn secondary" type="button" data-copy="{{ $publicUrl }}">{{ __('Copy public link') }}</button>
+        <a class="btn secondary" href="{{ \App\Support\PublicUrl::contact($profile->username) }}">{{ __('Open contact form') }}</a>
+        @if($profile->isPublished())
+            <a class="btn secondary" href="{{ $publicUrl }}">{{ __('View public page') }}</a>
+        @endif
+    </p>
+</div>
 <form class="form" method="post" action="{{ route('creator.public-page.draft') }}">
     @csrf
     <label>{{ __('Hero title') }}<input name="hero_title" value="{{ $profile->publicPage->draft_payload['hero_title'] ?? '' }}" required></label>
