@@ -16,8 +16,6 @@ use App\Models\Conversation;
 use App\Models\Dispute;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\ManagementSubscription;
-use App\Models\ManagerActivityLog;
 use App\Models\Message;
 use App\Models\Payment;
 use App\Models\PayoutAccount;
@@ -489,28 +487,6 @@ class MarketplaceEngine
         return ['status' => $result['status'], 'detail' => $result['detail']];
     }
 
-    public function logManager(int $ownerId, int $managerId, string $scope, string $action, array $meta = []): void
-    {
-        ManagerActivityLog::query()->create([
-            'creator_user_id' => $ownerId,
-            'manager_user_id' => $managerId,
-            'scope' => $scope,
-            'action' => $action,
-            'meta' => $meta,
-        ]);
-    }
-
-    public function subscribe(User $creator, int $planId): ManagementSubscription
-    {
-        return ManagementSubscription::query()->create([
-            'creator_user_id' => $creator->id,
-            'management_plan_id' => $planId,
-            'status' => 'active',
-            'starts_at' => now(),
-            'ends_at' => now()->addMonth(),
-        ]);
-    }
-
     public function startInternalChat(User $a, User $b, string $subject): Conversation
     {
         $conversation = Conversation::query()->create([
@@ -548,7 +524,6 @@ class MarketplaceEngine
         $message = Message::query()->create([
             'conversation_id' => $conversation->id,
             'actor_user_id' => $actor->id,
-            'acting_for_creator_id' => session('acting_for_creator_id'),
             'direction' => 'internal',
             'body' => $body,
             'delivery_status' => 'stored',

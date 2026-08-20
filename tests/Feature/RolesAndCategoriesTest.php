@@ -150,7 +150,6 @@ class RolesAndCategoriesTest extends TestCase
             ->get(route('app.roles'))
             ->assertOk()
             ->assertSee('Apply as creator', false)
-            ->assertSee('nobody applies to be one', false)
             ->assertDontSee('Apply as manager', false);
     }
 

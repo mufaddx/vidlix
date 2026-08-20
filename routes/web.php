@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminEmployeeController;
 use App\Http\Controllers\Admin\AdminHelpDeskController;
-use App\Http\Controllers\Admin\AdminManagerController;
 use App\Http\Controllers\Admin\AdminMemberController;
 use App\Http\Controllers\Admin\AdminOpsController;
 use App\Http\Controllers\Admin\AdminPlatformController;
@@ -23,7 +22,6 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetFlowController;
 use App\Http\Controllers\Auth\SignupFlowController;
 use App\Http\Controllers\Auth\TwoFactorController;
-use App\Http\Controllers\Managers\ManagerInvitationController;
 use App\Http\Controllers\Site\AppDownloadController;
 use App\Http\Controllers\Site\CreatorPublicController;
 use App\Http\Controllers\Site\EditorPublicController;
@@ -87,16 +85,6 @@ Route::get('/admin/login', [AdminAuthController::class, 'create'])->name('admin.
 Route::post('/admin/login', [AdminAuthController::class, 'store'])->middleware('throttle:login')->name('admin.login.store');
 Route::post('/admin/logout', [AdminAuthController::class, 'destroy'])->middleware('auth')->name('admin.logout');
 
-/*
- | Manager invitations are reachable without an account on purpose: the invited
- | person usually does not have one yet and sets their password here. The
- | emailed token is the only credential, and it expires.
- */
-Route::get('/manager/invite/{token}', [ManagerInvitationController::class, 'show'])->name('managers.invitation');
-Route::post('/manager/invite/{token}', [ManagerInvitationController::class, 'activate'])
-    ->middleware('throttle:register')
-    ->name('managers.invitation.activate');
-
 Route::prefix('webhooks')->middleware('throttle:webhooks')->group(function () {
     Route::match(['get', 'post'], 'meta', [WebhookController::class, 'meta']);
     Route::post('email/inbound', [WebhookController::class, 'emailInbound']);
@@ -110,7 +98,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
     Route::post('/verify-email/resend', [EmailVerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
     Route::post('/workspace/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
-    Route::post('/workspace/manage', [WorkspaceController::class, 'manage'])->name('workspace.manage');
     Route::get('/integrations/instagram/callback', [InstagramController::class, 'callback'])->name('instagram.callback');
 
     Route::middleware('verified')->group(function () {
@@ -160,11 +147,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/chat/{uuid}', [WorkspaceController::class, 'chatReply'])->name('app.chat.reply');
         Route::get('/earnings', [WorkspaceController::class, 'earnings'])->name('app.earnings');
         Route::post('/withdrawals', [WorkspaceController::class, 'withdraw'])->name('app.withdraw')->middleware('feature:withdrawals');
-        Route::get('/management', [WorkspaceController::class, 'managers'])->name('app.managers');
-        Route::post('/management/invite', [WorkspaceController::class, 'inviteManager'])->name('app.managers.invite');
-        Route::post('/management/accept/{token}', [WorkspaceController::class, 'acceptInvite'])->name('app.managers.accept');
-        Route::post('/management/subscribe', [WorkspaceController::class, 'subscribe'])->name('app.managers.subscribe');
-        Route::post('/management/{assignment}/revoke', [WorkspaceController::class, 'revokeManager'])->name('app.managers.revoke');
         Route::get('/automations', [WorkspaceController::class, 'automations'])->name('app.automations');
         Route::post('/automations', [WorkspaceController::class, 'storeAutomation'])->name('app.automations.store');
         Route::get('/instagram', [WorkspaceController::class, 'instagram'])->name('app.instagram');
@@ -242,10 +224,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/help-desk/{thread}', [AdminHelpDeskController::class, 'show'])->name('help-desk.show')->middleware('can:support.view');
         Route::post('/help-desk/{thread}/reply', [AdminHelpDeskController::class, 'reply'])->name('help-desk.reply')->middleware('can:support.reply');
         Route::post('/help-desk/{thread}/close', [AdminHelpDeskController::class, 'close'])->name('help-desk.close')->middleware('can:support.reply');
-
-        // Who manages whom, including managers Vidlix provided.
-        Route::get('/managers', [AdminManagerController::class, 'index'])->name('managers')->middleware('can:managers.view');
-        Route::post('/managers/assign', [AdminManagerController::class, 'assign'])->name('managers.assign')->middleware('can:managers.assign');
 
         // Staff accounts. Granting abilities is itself gated.
         Route::get('/health', [AdminPlatformController::class, 'health'])->name('health')->middleware('can:platform.manage');

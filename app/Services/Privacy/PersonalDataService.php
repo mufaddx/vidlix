@@ -28,7 +28,7 @@ class PersonalDataService
      */
     public function export(User $user): array
     {
-        $user->loadMissing(['roles', 'creatorProfile', 'editorProfile', 'brandProfile', 'managerProfile']);
+        $user->loadMissing(['roles', 'creatorProfile', 'editorProfile', 'brandProfile']);
 
         $this->audit->record('privacy.exported', $user, [], $user->id);
 
@@ -45,7 +45,6 @@ class PersonalDataService
                 'creator' => $user->creatorProfile?->toArray(),
                 'editor' => $user->editorProfile?->toArray(),
                 'brand' => $user->brandProfile?->toArray(),
-                'manager' => $user->managerProfile?->toArray(),
             ]),
             'messages' => Message::query()
                 ->where('actor_user_id', $user->id)
@@ -86,7 +85,6 @@ class PersonalDataService
             $user->creatorProfile?->delete();
             $user->editorProfile?->delete();
             $user->brandProfile?->delete();
-            $user->managerProfile?->delete();
 
             $user->roles()->detach();
 

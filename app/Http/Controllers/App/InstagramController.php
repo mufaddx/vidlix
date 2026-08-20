@@ -21,7 +21,7 @@ class InstagramController extends Controller
     public function connect(Request $request, InstagramProviderInterface $instagram): RedirectResponse
     {
         $profile = $request->user()->creatorProfile;
-        abort_unless($profile, 403);
+        abort_unless($profile !== null, 403);
 
         $url = $instagram->authorizationUrl($profile);
         if ($url === null) {
@@ -64,7 +64,7 @@ class InstagramController extends Controller
     public function sync(Request $request, InstagramProviderInterface $instagram, AuditLogger $audit): RedirectResponse
     {
         $profile = $request->user()->creatorProfile;
-        abort_unless($profile, 403);
+        abort_unless($profile !== null, 403);
 
         $result = $instagram->syncPermittedData($profile);
         $audit->record('instagram.sync', $profile, ['status' => $result['status']]);
@@ -72,18 +72,9 @@ class InstagramController extends Controller
         return back()->with('status', $result['detail']);
     }
 
-    /** A manager may connect on behalf of a creator they actively represent. */
+    /** Only the person who owns the profile may connect or sync it. */
     private function mayActFor(Request $request, CreatorProfile $profile): bool
     {
-        $user = $request->user();
-        if ($profile->user_id === $user->id) {
-            return true;
-        }
-
-        return $user->managerAssignments()
-            ->where('owner_user_id', $profile->user_id)
-            ->where('scope', 'creator')
-            ->where('status', 'active')
-            ->exists();
+        return $profile->user_id === $request->user()->id;
     }
 }

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Role;
-use App\Services\Audit\AuditLogger;
-use App\Services\Identity\AccountProvisioner;
+use App\Services\Profiles\ProfileApplications;
+use App\Services\Profiles\ProfileDirectory;
 use App\Services\Taxonomy\CategoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,9 +16,8 @@ use Illuminate\View\View;
  * Applying for a role after the account already exists.
  *
  * Signup no longer asks what you are, so this is where somebody becomes a
- * creator, an editor, a brand — or several at once. Manager is deliberately
- * not offered: that role is only ever granted by an account holder appointing
- * you, never by applying.
+ * creator, an editor, a brand — or several at once, on the one account they
+ * already have.
  */
 class RoleApplicationController extends Controller
 {
@@ -39,24 +38,22 @@ class RoleApplicationController extends Controller
         ]);
     }
 
-    public function apply(Request $request, AccountProvisioner $provisioner, AuditLogger $audit): RedirectResponse
+    public function apply(Request $request, ProfileApplications $applications): RedirectResponse
     {
         $data = $request->validate([
             'role' => ['required', 'in:'.implode(',', self::APPLICABLE)],
         ]);
         $user = $request->user();
 
-        if (in_array($data['role'], $user->roleSlugs(), true)) {
-            return back()->with('status', __('You already have that role.'));
+        $result = $applications->apply($user, $data['role']);
+
+        // A profile awaiting review has no dashboard to land on yet.
+        if ($result['status'] !== ProfileDirectory::ACTIVE) {
+            return back()->with('status', $result['message']);
         }
 
-        $role = Role::query()->where('slug', $data['role'])->firstOrFail();
-        $user->roles()->attach($role);
-        $provisioner->provisionRole($user, $role->slug);
-        $audit->record('role.applied', $user, ['role' => $role->slug]);
-
-        return redirect()->route($this->landingFor($role->slug))
-            ->with('status', $this->nextStepMessage($role->slug));
+        return redirect()->route($this->landingFor($data['role']))
+            ->with('status', $this->nextStepMessage($data['role']));
     }
 
     /** Creator picks the categories brands will search them by. */
@@ -65,7 +62,7 @@ class RoleApplicationController extends Controller
         // Read the relation rather than the possibly-cached attribute: the role
         // may have been granted moments ago on the same user instance.
         $profile = $request->user()->creatorProfile()->first();
-        abort_unless($profile, 403);
+        abort_unless($profile !== null, 403);
 
         $data = $request->validate([
             'category_ids' => ['array'],

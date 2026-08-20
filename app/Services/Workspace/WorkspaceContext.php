@@ -2,40 +2,36 @@
 
 namespace App\Services\Workspace;
 
-use App\Models\ManagerAssignment;
 use App\Models\User;
+use App\Services\Profiles\ProfileDirectory;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Which account the signed-in person is currently acting as.
+ * Which of their own profiles the signed-in person is currently working in.
  *
- * Identity never changes: the session always belongs to the logged-in user. A
- * manager may *act for* somebody else's account, and every request re-checks
- * that assignment against the database. The session only ever holds ids, never
- * a permission — so a tampered session grants nothing.
+ * Identity never changes: the session always belongs to the logged-in user, and
+ * one human keeps one account no matter how many profiles they hold. Nobody can
+ * act on somebody else's behalf — that was the manager system, and it is gone.
+ *
+ * The session only ever holds the name of a profile type, never a permission.
+ * Whether that profile is usable is re-read from the database on every request,
+ * so a profile suspended a second ago stops working immediately rather than at
+ * the next sign-in, and a tampered session grants nothing.
  */
 class WorkspaceContext
 {
-    public const ACTING_USER = 'acting_for_user_id';
-
-    public const ACTING_SCOPE = 'acting_scope';
+    public function __construct(private ProfileDirectory $directory) {}
 
     public function hydrate(User $user): void
     {
-        $roles = $user->roleSlugs();
+        // Only profiles a reviewer has approved. A pending application, or one
+        // that was suspended a moment ago, must stop being usable at once.
+        $available = $this->directory->activeTypes($user);
         $active = session('active_role');
 
-        if (! is_string($active) || ! in_array($active, $roles, true)) {
-            session(['active_role' => $roles[0] ?? null]);
-        }
-
-        // Re-authorise on every request. An assignment revoked a second ago must
-        // stop working immediately, not at the next login.
-        $actingFor = session(self::ACTING_USER);
-        $scope = session(self::ACTING_SCOPE);
-        if ($actingFor && ! $this->canActFor($user, (int) $actingFor, (string) $scope)) {
-            $this->actAsSelf();
+        if (! is_string($active) || ! in_array($active, $available, true)) {
+            session(['active_role' => $available[0] ?? null]);
         }
     }
 
@@ -46,118 +42,41 @@ class WorkspaceContext
 
     public function switchRole(User $user, string $role): void
     {
-        if (! in_array($role, $user->roleSlugs(), true)) {
+        if (! in_array($role, $this->directory->activeTypes($user), true)) {
             throw ValidationException::withMessages([
-                'role' => __('You are not assigned that role.'),
+                'role' => __('That profile is not active on your account.'),
             ]);
         }
 
         session(['active_role' => $role]);
-        $this->actAsSelf();
-    }
-
-    /** Switch to a managed account. Authorisation is looked up, never passed in. */
-    public function actAs(User $user, int $ownerUserId, string $scope): void
-    {
-        if ($ownerUserId === $user->id) {
-            $this->actAsSelf();
-
-            return;
-        }
-
-        abort_unless($this->canActFor($user, $ownerUserId, $scope), 403, __('You do not manage that account.'));
-
-        session([
-            'active_role' => 'manager',
-            self::ACTING_USER => $ownerUserId,
-            self::ACTING_SCOPE => $scope,
-        ]);
-    }
-
-    public function actAsSelf(): void
-    {
-        session()->forget([self::ACTING_USER, self::ACTING_SCOPE, 'acting_for_creator_id']);
-    }
-
-    public function canActFor(User $user, int $ownerUserId, string $scope): bool
-    {
-        if (! in_array($scope, ManagerAssignment::SCOPES, true)) {
-            return false;
-        }
-
-        return ManagerAssignment::query()
-            ->active()
-            ->where('manager_user_id', $user->id)
-            ->where('owner_user_id', $ownerUserId)
-            ->where('scope', $scope)
-            ->exists();
-    }
-
-    public function actingForUserId(): ?int
-    {
-        $id = session(self::ACTING_USER);
-
-        return $id ? (int) $id : null;
-    }
-
-    public function actingScope(): ?string
-    {
-        $scope = session(self::ACTING_SCOPE);
-
-        return is_string($scope) ? $scope : null;
-    }
-
-    /** The account whose data should be read: the managed one, or the user's own. */
-    public function effectiveUser(User $user): User
-    {
-        $id = $this->actingForUserId();
-
-        return $id ? (User::query()->find($id) ?? $user) : $user;
-    }
-
-    public function isActingForSomeoneElse(): bool
-    {
-        return $this->actingForUserId() !== null;
     }
 
     /**
-     * Everything the switcher should offer: the person's own account first,
-     * then every account they currently manage.
+     * The account whose data should be read.
      *
-     * @return Collection<int, array{owner_user_id: int, scope: ?string, label: string, sublabel: string, is_self: bool, company_provided: bool, active: bool}>
+     * Always the signed-in user. The method is kept because callers read better
+     * for saying whose data they want than for assuming it, and because it is
+     * the one place a future delegation feature would have to go through.
      */
-    public function switchableAccounts(User $user): Collection
+    public function effectiveUser(User $user): User
     {
-        $actingId = $this->actingForUserId();
-        $actingScope = $this->actingScope();
+        return $user;
+    }
 
-        $own = collect([[
-            'owner_user_id' => $user->id,
-            'scope' => null,
-            'label' => $user->name,
-            'sublabel' => __('Your own account'),
-            'is_self' => true,
-            'company_provided' => false,
-            'active' => $actingId === null,
-        ]]);
+    /**
+     * Everything the profile switcher should offer: the approved profiles on
+     * this person's own account, and nothing else.
+     *
+     * @return Collection<int, array{type: string, label: string, active: bool}>
+     */
+    public function switchableProfiles(User $user): Collection
+    {
+        $active = session('active_role');
 
-        $managed = ManagerAssignment::query()
-            ->active()
-            ->where('manager_user_id', $user->id)
-            ->with('owner:id,name,email')
-            ->get()
-            ->map(fn (ManagerAssignment $a) => [
-                'owner_user_id' => (int) $a->owner_user_id,
-                'scope' => $a->scope,
-                'label' => $a->owner?->name ?? __('Unknown account'),
-                'sublabel' => $a->isCompanyProvided()
-                    ? __(':scope · provided by Vidlix', ['scope' => ucfirst($a->scope)])
-                    : ucfirst($a->scope),
-                'is_self' => false,
-                'company_provided' => $a->isCompanyProvided(),
-                'active' => $actingId === (int) $a->owner_user_id && $actingScope === $a->scope,
-            ]);
-
-        return $own->concat($managed);
+        return collect($this->directory->activeTypes($user))->map(fn (string $type) => [
+            'type' => $type,
+            'label' => ProfileDirectory::LABELS[$type] ?? ucfirst($type),
+            'active' => $active === $type,
+        ])->values();
     }
 }

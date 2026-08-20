@@ -41,13 +41,13 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('earnings', [WorkspaceApiController::class, 'earnings']);
         Route::post('withdrawals', [MarketplaceController::class, 'withdraw']);
         Route::get('invoices', [WorkspaceApiController::class, 'invoices']);
-        Route::get('managers', [WorkspaceApiController::class, 'managers']);
         Route::get('instagram', [WorkspaceApiController::class, 'instagram']);
 
         Route::get('inbox', [MarketplaceController::class, 'inbox']);
         Route::get('conversations/{uuid}/messages', [MarketplaceController::class, 'messages']);
         Route::post('conversations/{uuid}/messages', [WorkspaceApiController::class, 'postMessage']);
 
+        Route::get('profiles', [WorkspaceApiController::class, 'profiles']);
         Route::post('roles/apply', [WorkspaceApiController::class, 'applyForRole']);
         Route::post('devices', [WorkspaceApiController::class, 'registerDevice']);
     });

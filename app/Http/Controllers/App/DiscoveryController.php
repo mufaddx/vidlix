@@ -45,7 +45,7 @@ class DiscoveryController extends Controller
     public function connect(Request $request, CreatorProfile $creator, MarketplaceEngine $engine): RedirectResponse
     {
         $brand = $request->user()->brandProfile()->first();
-        abort_unless($brand, 403);
+        abort_unless($brand !== null, 403);
         abort_unless($creator->visibility === 'public', 404);
 
         $data = $request->validate([

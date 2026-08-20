@@ -36,6 +36,7 @@ class CreatorProfile extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasOne<CreatorPublicPage, $this> */
     public function publicPage(): HasOne
     {
         return $this->hasOne(CreatorPublicPage::class);
@@ -53,8 +54,10 @@ class CreatorProfile extends Model
 
     public function isPublished(): bool
     {
+        // The second check needs no nullsafe: reaching it means the first one
+        // matched a real status, so the page is there.
         return $this->visibility === 'public'
             && $this->publicPage?->status === 'published'
-            && $this->publicPage?->published_payload;
+            && (bool) $this->publicPage->published_payload;
     }
 }

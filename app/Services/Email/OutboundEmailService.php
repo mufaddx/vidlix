@@ -45,14 +45,16 @@ class OutboundEmailService
     public function identityFor(Conversation $conversation): OutboundIdentity
     {
         $scope = $this->prefixFor($conversation);
-        $domain = (string) config('vidlix.email.inbound_domain');
         $fallback = (string) config('vidlix.email.from_address');
 
-        // creator@domain / editor@domain when the inbound domain is set up;
-        // otherwise the single configured sender.
-        $fromAddress = $domain !== '' && $scope !== (string) config('vidlix.email.reply_prefix', 'reply')
-            ? $scope.'@'.$domain
-            : $fallback;
+        /*
+         | A creator thread leaves from creator@, an editor thread from editor@,
+         | support from help@. The addresses are configured rather than built
+         | from the inbound domain, because the domain mail arrives on and the
+         | domain it is sent from are allowed to differ — and only a configured
+         | address has SPF and DKIM behind it.
+         */
+        $fromAddress = (string) (config('vidlix.email.identities.'.$scope) ?: $fallback);
 
         return new OutboundIdentity(
             fromAddress: $fromAddress,

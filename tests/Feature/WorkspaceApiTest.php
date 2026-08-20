@@ -31,7 +31,7 @@ class WorkspaceApiTest extends TestCase
 
     public function test_the_workspace_endpoints_require_a_token(): void
     {
-        foreach (['/api/v1/projects', '/api/v1/earnings', '/api/v1/invoices', '/api/v1/managers', '/api/v1/instagram'] as $uri) {
+        foreach (['/api/v1/projects', '/api/v1/earnings', '/api/v1/invoices', '/api/v1/instagram'] as $uri) {
             $this->getJson($uri)->assertStatus(401);
         }
     }

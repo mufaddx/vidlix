@@ -89,7 +89,7 @@ class AdminPanelTest extends TestCase
     {
         $admin = $this->superAdmin();
 
-        foreach (['/admin/help-desk', '/admin/verification', '/admin/finance', '/admin/employees', '/admin/managers'] as $path) {
+        foreach (['/admin/help-desk', '/admin/verification', '/admin/finance', '/admin/employees'] as $path) {
             $this->actingAs($admin)->get($path)->assertOk();
         }
     }
@@ -371,7 +371,6 @@ class AdminPanelTest extends TestCase
         foreach ([
             '/admin/help-desk' => 'Help desk',
             '/admin/employees' => 'Employees',
-            '/admin/managers' => 'Managers',
             '/admin/finance' => 'Finance',
             '/admin/influencers' => 'All influencers',
         ] as $path => $heading) {
@@ -411,7 +410,6 @@ class AdminPanelTest extends TestCase
             ->assertSee('2,500.00', false)        // money, from the ledger
             ->assertSee('Influencer profile', false)
             ->assertSee('Conversations', false)
-            ->assertSee('Management', false)
             ->assertSee('Recent activity', false)
             ->assertSee('Suspend this account', false);
     }
@@ -487,24 +485,19 @@ class AdminPanelTest extends TestCase
         $this->assertSame('active', $member->fresh()->status);
     }
 
-    public function test_a_company_provided_manager_is_labelled_as_such(): void
+    /**
+     * The manager system is gone. Its admin pages must not merely be unlinked —
+     * a staff member who kept the URL should find nothing there.
+     */
+    public function test_the_manager_admin_pages_are_gone(): void
     {
         $admin = $this->superAdmin();
-        $owner = User::factory()->create(['email_verified_at' => now()]);
-        $owner->roles()->attach(Role::query()->where('slug', 'creator')->first());
-        app(CreatorOnboardingService::class)->provision($owner->id, $owner->name);
 
+        $this->actingAs($admin)->get('/admin/managers')->assertNotFound();
         $this->actingAs($admin)->post('/admin/managers/assign', [
-            'owner_email' => $owner->email,
-            'manager_email' => 'companymanager@vidlix.test',
+            'owner_email' => 'someone@vidlix.test',
+            'manager_email' => 'manager@vidlix.test',
             'scope' => 'creator',
-            'manager_name' => 'Company Manager',
-        ])->assertRedirect();
-
-        $this->assertDatabaseHas('manager_invitations', [
-            'email' => 'companymanager@vidlix.test',
-            'source' => 'company',
-            'scope' => 'creator',
-        ]);
+        ])->assertNotFound();
     }
 }

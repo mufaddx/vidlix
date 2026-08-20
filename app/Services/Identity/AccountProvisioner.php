@@ -5,7 +5,6 @@ namespace App\Services\Identity;
 use App\Models\BrandProfile;
 use App\Models\EditorProfile;
 use App\Models\LedgerAccount;
-use App\Models\ManagerProfile;
 use App\Models\User;
 use App\Services\Creator\CreatorOnboardingService;
 use Illuminate\Support\Str;
@@ -20,7 +19,6 @@ class AccountProvisioner
             'creator' => $this->creator($user),
             'editor' => $this->editor($user),
             'brand' => $this->brand($user),
-            'manager' => $this->manager($user),
             default => null,
         };
 
@@ -62,17 +60,6 @@ class AccountProvisioner
             'slug' => $this->unique('brand', $user->name),
             'business_email' => $user->email,
             'verification_status' => 'unverified',
-        ]);
-    }
-
-    private function manager(User $user): void
-    {
-        if ($user->managerProfile) {
-            return;
-        }
-        ManagerProfile::query()->create([
-            'user_id' => $user->id,
-            'display_name' => $user->name,
         ]);
     }
 

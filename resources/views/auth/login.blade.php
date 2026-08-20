@@ -18,7 +18,7 @@
     <div class="field">
         <label for="login">{{ __('Email address or mobile number') }}</label>
         <input id="login" name="login" type="text" required autofocus autocomplete="username"
-               value="{{ old('login') }}" placeholder="{{ __('you@example.com') }}">
+               value="{{ old('login') }}" placeholder="{{ __('Email or mobile number') }}">
     </div>
 
     <div class="field field-password">

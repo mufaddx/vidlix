@@ -27,7 +27,6 @@
     @endforeach
 </div>
 
-<p class="muted">{{ __('Manager is not listed because nobody applies to be one. You become a manager only when an account holder appoints you.') }}</p>
 
 @if(in_array('creator', $held, true))
     <h2>{{ __('Your categories') }}</h2>

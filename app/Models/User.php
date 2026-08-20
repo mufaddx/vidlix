@@ -58,36 +58,22 @@ class User extends Authenticatable implements MustVerifyEmail
         return in_array($slug, $this->roleSlugs(), true);
     }
 
+    /** @return HasOne<CreatorProfile, $this> */
     public function creatorProfile(): HasOne
     {
         return $this->hasOne(CreatorProfile::class);
     }
 
+    /** @return HasOne<EditorProfile, $this> */
     public function editorProfile(): HasOne
     {
         return $this->hasOne(EditorProfile::class);
     }
 
+    /** @return HasOne<BrandProfile, $this> */
     public function brandProfile(): HasOne
     {
         return $this->hasOne(BrandProfile::class);
-    }
-
-    public function managerProfile(): HasOne
-    {
-        return $this->hasOne(ManagerProfile::class);
-    }
-
-    /** Accounts this user manages on somebody else's behalf. */
-    public function managerAssignments(): HasMany
-    {
-        return $this->hasMany(ManagerAssignment::class, 'manager_user_id');
-    }
-
-    /** Managers appointed over this user's own accounts. */
-    public function managedByAssignments(): HasMany
-    {
-        return $this->hasMany(ManagerAssignment::class, 'owner_user_id');
     }
 
     public function employee(): HasOne

@@ -7,12 +7,12 @@ use App\Models\BlogPost;
 use App\Models\BrandProfile;
 use App\Models\Campaign;
 use App\Models\CmsPage;
+use App\Models\CommissionRule;
 use App\Models\CreatorProfile;
 use App\Models\EditorProfile;
 use App\Models\Faq;
 use App\Models\FeaturedCreator;
 use App\Models\HomepageSection;
-use App\Models\ManagementPlan;
 use App\Models\Testimonial;
 use Illuminate\View\View;
 
@@ -33,7 +33,7 @@ class HomeController extends Controller
         $topEditors = EditorProfile::query()->where('application_status', 'approved')->limit(6)->get();
         $topBrands = BrandProfile::query()->where('verification_status', 'verified')->limit(6)->get();
         $openCampaigns = Campaign::query()->where('status', 'published')->latest()->limit(4)->get();
-        $plans = ManagementPlan::query()->where('is_active', true)->get();
+        $commission = CommissionRule::query()->where('is_active', true)->where('slug', 'default')->value('bps');
 
         // Counted, not claimed. A landing page that invents its numbers is the
         // same lie as a dashboard that invents a balance, so these are real
@@ -47,7 +47,7 @@ class HomeController extends Controller
 
         return view('public.home', compact(
             'sections', 'faqs', 'testimonials', 'featured',
-            'topCreators', 'topEditors', 'topBrands', 'openCampaigns', 'plans', 'counts'
+            'topCreators', 'topEditors', 'topBrands', 'openCampaigns', 'counts'
         ));
     }
 
@@ -60,9 +60,12 @@ class HomeController extends Controller
 
     public function pricing(): View
     {
-        $plans = ManagementPlan::query()->where('is_active', true)->get();
+        // The one number that is actually charged. Read from the rule the
+        // ledger uses, so the page cannot quote a rate the platform does not
+        // apply.
+        $commission = CommissionRule::query()->where('is_active', true)->where('slug', 'default')->value('bps');
 
-        return view('public.pricing', compact('plans'));
+        return view('public.pricing', ['commissionBps' => $commission]);
     }
 
     public function creators(): View

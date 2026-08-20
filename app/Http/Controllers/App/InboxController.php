@@ -73,7 +73,6 @@ class InboxController extends Controller
         $message = Message::query()->create([
             'conversation_id' => $conversation->id,
             'actor_user_id' => $request->user()->id,
-            'acting_for_creator_id' => session('acting_for_creator_id'),
             'direction' => 'outbound',
             'body' => $data['body'],
             'delivery_status' => $outbound->initialStatus(),

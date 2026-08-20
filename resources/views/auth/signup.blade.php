@@ -59,7 +59,7 @@
             <div class="field">
                 <label for="email">{{ __('Email address') }}</label>
                 <input id="email" name="email" type="email" required autocomplete="email"
-                       value="{{ $pending['email'] ?? old('email') }}" placeholder="{{ __('you@example.com') }}">
+                       value="{{ $pending['email'] ?? old('email') }}" placeholder="{{ __('Enter your email address') }}">
             </div>
 
             <label class="check">

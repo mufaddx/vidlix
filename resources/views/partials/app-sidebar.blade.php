@@ -12,7 +12,6 @@
             <a class="{{ request()->routeIs('creator.public-page') ? 'active' : '' }}" href="{{ route('creator.public-page') }}">{{ __('Public page') }}</a>
             <a href="{{ route('app.instagram') }}">{{ __('Instagram') }}</a>
             <a href="{{ route('app.automations') }}">{{ __('Automation') }}</a>
-            <a href="{{ route('app.managers') }}">{{ __('Management') }}</a>
         @endif
         <a class="{{ request()->routeIs('app.roles') ? 'active' : '' }}" href="{{ route('app.roles') }}">{{ __('Roles & categories') }}</a>
         <a href="{{ route('app.editors') }}">{{ __('Editor') }}</a>

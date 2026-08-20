@@ -9,7 +9,6 @@ use App\Models\Conversation;
 use App\Models\Invoice;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
-use App\Models\ManagerAssignment;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\SupportThread;
@@ -92,8 +91,6 @@ class AdminMemberController extends Controller
                 ->withCount('messages')
                 ->latest('last_message_at')
                 ->limit(20)->get(),
-            'managedBy' => ManagerAssignment::query()->where('owner_user_id', $user->id)->with('manager:id,name,email')->get(),
-            'manages' => ManagerAssignment::query()->where('manager_user_id', $user->id)->with('owner:id,name,email')->get(),
             'supportThreads' => SupportThread::query()->where('user_id', $user->id)->with('conversation')->latest()->limit(10)->get(),
             'activity' => AuditLog::query()->where('actor_user_id', $user->id)->latest()->limit(30)->get(),
             'creatorCategories' => $user->creatorProfile ? $categories->forProfile($user->creatorProfile) : collect(),
@@ -135,7 +132,7 @@ class AdminMemberController extends Controller
     public function updateVisibility(Request $request, User $user, AuditLogger $audit): RedirectResponse
     {
         $profile = $user->creatorProfile;
-        abort_unless($profile, 404);
+        abort_unless($profile !== null, 404);
 
         $visibility = $request->validate(['visibility' => ['required', 'in:public,private']])['visibility'];
         $profile->update(['visibility' => $visibility]);

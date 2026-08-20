@@ -15,9 +15,6 @@ use App\Models\Conversation;
 use App\Models\Dispute;
 use App\Models\Invoice;
 use App\Models\LedgerEntry;
-use App\Models\ManagementPlan;
-use App\Models\ManagerAssignment;
-use App\Models\ManagerInvitation;
 use App\Models\Payment;
 use App\Models\PortfolioItem;
 use App\Models\Project;
@@ -30,7 +27,6 @@ use App\Services\Audit\AuditLogger;
 use App\Services\Billing\InvoicePdf;
 use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
-use App\Services\Managers\ManagerDirectory;
 use App\Services\Marketplace\MarketplaceEngine;
 use App\Services\Media\MediaStorage;
 use App\Services\Notifications\Notifier;
@@ -54,25 +50,6 @@ class WorkspaceController extends Controller
         $workspace->switchRole($request->user(), $data['role']);
 
         return back();
-    }
-
-    /** Account switcher. The owner id is checked against live assignments. */
-    public function manage(Request $request, WorkspaceContext $workspace): RedirectResponse
-    {
-        $data = $request->validate([
-            'owner_user_id' => ['required', 'integer'],
-            'scope' => ['nullable', 'in:creator,brand,editor'],
-        ]);
-
-        if ((int) $data['owner_user_id'] === $request->user()->id) {
-            $workspace->actAsSelf();
-
-            return redirect()->route('dashboard');
-        }
-
-        $workspace->actAs($request->user(), (int) $data['owner_user_id'], (string) ($data['scope'] ?? ''));
-
-        return redirect()->route('dashboard');
     }
 
     public function editors(): View
@@ -122,7 +99,7 @@ class WorkspaceController extends Controller
     {
         $this->ensureRole($request->user(), 'editor');
         $profile = $request->user()->fresh()->editorProfile;
-        abort_unless($profile, 403);
+        abort_unless($profile !== null, 403);
         $data = $request->validate([
             'bio' => ['required', 'string', 'max:3000'],
             'software' => ['nullable', 'string'],
@@ -426,62 +403,10 @@ class WorkspaceController extends Controller
         return back()->with('status', __('Withdrawal requested. Payout waits on provider + admin verification.'));
     }
 
-    public function managers(ManagerDirectory $directory): View
-    {
-        $user = request()->user();
-
-        return view('app.managers', [
-            // Managers this person has appointed over their own accounts.
-            'invites' => ManagerInvitation::query()->where('owner_user_id', $user->id)->latest()->get(),
-            'appointed' => ManagerAssignment::query()->where('owner_user_id', $user->id)->with('manager:id,name,email')->get(),
-            // Accounts this person manages for somebody else.
-            'representing' => ManagerAssignment::query()->active()->where('manager_user_id', $user->id)->with('owner:id,name,email')->get(),
-            'scopes' => $directory->ownedScopes($user),
-            'plans' => ManagementPlan::query()->where('is_active', true)->get(),
-        ]);
-    }
-
-    public function inviteManager(Request $request, ManagerDirectory $directory): RedirectResponse
-    {
-        $data = $request->validate([
-            'scope' => ['required', 'in:creator,brand,editor'],
-            'email' => ['required', 'email'],
-            'name' => ['nullable', 'string', 'max:120'],
-            'mobile' => ['nullable', 'string', 'max:20'],
-        ]);
-        $directory->invite($request->user(), $data['scope'], $data);
-
-        return back()->with('status', __('Invitation stored. Manager must accept with the same email.'));
-    }
-
-    public function acceptInvite(Request $request, string $token, ManagerDirectory $directory): RedirectResponse
-    {
-        $invitation = $directory->findOpenInvitation($token);
-        abort_unless($invitation !== null, 404);
-        $directory->acceptAsExistingUser($invitation, $request->user());
-
-        return back()->with('status', __('Manager access active. Use the account switcher to act for that account.'));
-    }
-
-    public function subscribe(Request $request): RedirectResponse
-    {
-        abort_unless($request->user()->creatorProfile, 403);
-        $this->engine->subscribe($request->user(), (int) $request->validate(['plan_id' => ['required', 'exists:management_plans,id']])['plan_id']);
-
-        return back()->with('status', __('Subscription recorded. Charging requires a payment provider.'));
-    }
-
-    public function revokeManager(ManagerAssignment $assignment, ManagerDirectory $directory): RedirectResponse
-    {
-        $directory->revoke(request()->user(), $assignment);
-
-        return back()->with('status', __('Manager access revoked. It stops on their very next request.'));
-    }
-
     public function automations(InstagramProviderInterface $instagram): View
     {
         $profile = request()->user()->creatorProfile;
-        abort_unless($profile, 403);
+        abort_unless($profile !== null, 403);
         $items = Automation::query()->where('creator_profile_id', $profile->id)->latest()->get();
 
         return view('app.automations', ['items' => $items, 'configured' => $instagram->isConfigured()]);
@@ -490,7 +415,7 @@ class WorkspaceController extends Controller
     public function storeAutomation(Request $request): RedirectResponse
     {
         $profile = $request->user()->creatorProfile;
-        abort_unless($profile, 403);
+        abort_unless($profile !== null, 403);
         $this->engine->saveAutomation($profile->id, $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'keywords' => ['nullable', 'string'],
@@ -506,7 +431,7 @@ class WorkspaceController extends Controller
     public function instagram(InstagramProviderInterface $instagram): View
     {
         $profile = request()->user()->creatorProfile;
-        abort_unless($profile, 403);
+        abort_unless($profile !== null, 403);
         $account = $profile->instagramAccount;
 
         return view('app.instagram', [
@@ -613,7 +538,7 @@ class WorkspaceController extends Controller
     {
         $user = request()->user();
         $owner = $user->creatorProfile ?? $user->editorProfile;
-        abort_unless($owner, 403);
+        abort_unless($owner !== null, 403);
         $items = PortfolioItem::query()->where('owner_type', $owner::class)->where('owner_id', $owner->id)->get();
 
         return view('app.portfolio', compact('items'));
@@ -623,7 +548,7 @@ class WorkspaceController extends Controller
     {
         $user = $request->user();
         $owner = $user->creatorProfile ?? $user->editorProfile;
-        abort_unless($owner, 403);
+        abort_unless($owner !== null, 403);
         $data = $request->validate(['title' => ['required', 'string'], 'url' => ['nullable', 'url'], 'description' => ['nullable', 'string']]);
         PortfolioItem::query()->create($data + ['owner_type' => $owner::class, 'owner_id' => $owner->id]);
 

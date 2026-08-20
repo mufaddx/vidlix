@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * The json columns are cast to arrays; saying so here lets a caller index into
+ * them without static analysis reading them as the raw text the column holds.
+ *
+ * @property array<string, mixed> $draft_payload
+ * @property array<string, mixed> $published_payload
+ */
 class CreatorPublicPage extends Model
 {
     protected $fillable = [
@@ -31,6 +38,7 @@ class CreatorPublicPage extends Model
         return $this->belongsTo(CreatorProfile::class);
     }
 
+    /** @return HasOne<ContactForm, $this> */
     public function contactForm(): HasOne
     {
         return $this->hasOne(ContactForm::class);

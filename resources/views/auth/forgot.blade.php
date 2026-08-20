@@ -30,7 +30,7 @@
             <div class="field">
                 <label for="login">{{ __('Email address or mobile number') }}</label>
                 <input id="login" name="login" type="text" required autofocus autocomplete="username"
-                       placeholder="{{ __('you@example.com') }}">
+                       placeholder="{{ __('Enter your email address') }}">
             </div>
 
             <button class="btn" type="submit">

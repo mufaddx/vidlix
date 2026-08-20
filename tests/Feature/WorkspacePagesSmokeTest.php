@@ -49,13 +49,26 @@ class WorkspacePagesSmokeTest extends TestCase
             ->assertSee('Ledger', false);
     }
 
-    public function test_the_management_page_renders_with_the_new_manager_model(): void
+    /** Every door the manager system used to open is closed. */
+    public function test_the_management_pages_are_gone(): void
     {
-        $this->actingAs($this->creator())
-            ->get('/management')
-            ->assertOk()
-            ->assertSee('Appoint a manager', false)
-            ->assertSee('Nobody can apply to manage your account', false);
+        $creator = $this->creator();
+
+        foreach (['/management', '/manager/invite/any-token'] as $path) {
+            $this->actingAs($creator)->get($path)->assertNotFound();
+        }
+
+        $this->actingAs($creator)->post('/management/invite', [
+            'scope' => 'creator',
+            'email' => 'manager@vidlix.test',
+        ])->assertNotFound();
+
+        // The account switcher is the other way in: it must refuse to act for
+        // anybody, even a user id that really exists.
+        $other = $this->creator();
+        $this->actingAs($creator)
+            ->post('/workspace/manage', ['owner_user_id' => $other->id, 'scope' => 'creator'])
+            ->assertNotFound();
     }
 
     public function test_the_admin_finance_page_offers_no_way_to_mark_a_payout_paid(): void

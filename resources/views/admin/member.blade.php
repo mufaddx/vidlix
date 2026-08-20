@@ -202,38 +202,6 @@
 </div>
 @endif
 
-{{-- Management ------------------------------------------------------------ --}}
-<div class="a-panel">
-    <div class="a-panel-head">{{ __('Management') }}</div>
-    <table class="a-table">
-        <thead><tr><th>{{ __('Relationship') }}</th><th>{{ __('Person') }}</th><th>{{ __('Scope') }}</th><th>{{ __('Arranged by') }}</th><th>{{ __('Status') }}</th></tr></thead>
-        <tbody>
-        @forelse($managedBy as $a)
-            <tr>
-                <td>{{ __('Managed by') }}</td>
-                <td>{{ $a->manager?->name }}<span class="a-sub">{{ $a->manager?->email }}</span></td>
-                <td>{{ ucfirst($a->scope) }}</td>
-                <td>{{ $a->isCompanyProvided() ? __('Vidlix') : __('Account holder') }}</td>
-                <td><span class="a-tag {{ $a->status === 'active' ? 'ok' : 'danger' }}">{{ $a->status }}</span></td>
-            </tr>
-        @empty
-        @endforelse
-        @foreach($manages as $a)
-            <tr>
-                <td>{{ __('Manages') }}</td>
-                <td>{{ $a->owner?->name }}<span class="a-sub">{{ $a->owner?->email }}</span></td>
-                <td>{{ ucfirst($a->scope) }}</td>
-                <td>{{ $a->isCompanyProvided() ? __('Vidlix') : __('Account holder') }}</td>
-                <td><span class="a-tag {{ $a->status === 'active' ? 'ok' : 'danger' }}">{{ $a->status }}</span></td>
-            </tr>
-        @endforeach
-        @if($managedBy->isEmpty() && $manages->isEmpty())
-            <tr><td colspan="5" class="a-empty">{{ __('No management relationships.') }}</td></tr>
-        @endif
-        </tbody>
-    </table>
-</div>
-
 {{-- History --------------------------------------------------------------- --}}
 <div class="a-panel">
     <div class="a-panel-head">{{ __('Recent activity') }}</div>

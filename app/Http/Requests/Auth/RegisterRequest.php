@@ -24,8 +24,6 @@ class RegisterRequest extends FormRequest
              | applies to be a creator, an editor, a brand, or several. Asking up
              | front forced a choice before they had seen the product, and made
              | "I am both a creator and an editor" impossible to express.
-             |
-             | Manager is absent from every path: nobody applies to be one.
              */
             'role' => ['sometimes', 'nullable', 'in:creator,editor,brand'],
         ];

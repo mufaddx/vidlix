@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed> $schema_json
+ */
 class ContactFormVersion extends Model
 {
     protected $fillable = ['contact_form_id', 'version_number', 'schema_json', 'published_at'];

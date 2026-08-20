@@ -2,7 +2,7 @@
     <div class="wrap footer-grid">
         <div>
             <a class="footer-brand" href="{{ route('home') }}">{{ config('app.name') }}</a>
-            <p class="footer-intro">{{ __('The production desk for creators, brands, editors, and authorized managers — from discovery to settlement.') }}</p>
+            <p class="footer-intro">{{ __('The production desk for creators, editors, and brands — from discovery to settlement.') }}</p>
             <div class="footer-social" aria-label="{{ __('Social') }}">
                 <a href="{{ config('vidlix.social.instagram') }}" rel="noopener noreferrer" target="_blank" aria-label="{{ __('Instagram') }}">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm5 4.8A4.2 4.2 0 1 0 16.2 12 4.2 4.2 0 0 0 12 7.8zm0 6.9A2.7 2.7 0 1 1 14.7 12 2.7 2.7 0 0 1 12 14.7zM17.6 6.5a1 1 0 1 0 1 1 1 1 0 0 0-1-1z"/></svg>
@@ -31,7 +31,6 @@
                 <li><a href="{{ route('pages.show', 'for-creators') }}">{{ __('For creators') }}</a></li>
                 <li><a href="{{ route('pages.show', 'for-editors') }}">{{ __('For editors') }}</a></li>
                 <li><a href="{{ route('pages.show', 'for-brands') }}">{{ __('For brands') }}</a></li>
-                <li><a href="{{ route('pages.show', 'for-managers') }}">{{ __('For managers') }}</a></li>
             </ul>
         </div>
         <div>
@@ -59,7 +58,6 @@
                 <li><a href="{{ route('app.projects') }}">{{ __('Projects') }}</a></li>
                 <li><a href="{{ route('app.invoices') }}">{{ __('Invoices') }}</a></li>
                 <li><a href="{{ route('app.earnings') }}">{{ __('Earnings') }}</a></li>
-                <li><a href="{{ route('app.managers') }}">{{ __('Management') }}</a></li>
                 <li><a href="{{ route('app.tickets') }}">{{ __('Support') }}</a></li>
                 <li><a href="{{ route('app.settings') }}">{{ __('Settings') }}</a></li>
             </ul>
@@ -75,7 +73,6 @@
                 <li><a href="{{ route('pages.show', 'creator-terms') }}">{{ __('Creator terms') }}</a></li>
                 <li><a href="{{ route('pages.show', 'brand-terms') }}">{{ __('Brand terms') }}</a></li>
                 <li><a href="{{ route('pages.show', 'editor-terms') }}">{{ __('Editor terms') }}</a></li>
-                <li><a href="{{ route('pages.show', 'management-terms') }}">{{ __('Management terms') }}</a></li>
                 <li><a href="{{ route('pages.show', 'community') }}">{{ __('Community guidelines') }}</a></li>
             </ul>
         </div>

@@ -7,7 +7,7 @@
 <section class="hero-stage">
     <div class="wrap hero">
         <div>
-            <p class="kicker">{{ __('Creator × Brand × Editor × Manager') }}</p>
+            <p class="kicker">{{ __('Creator × Editor × Brand') }}</p>
             <h1>{{ $sections['hero']->title ?? __('The production desk for creators, brands and editors') }}</h1>
             <p class="lede">{{ $sections['hero']->subtitle ?? __('Discover talent, agree terms in the open, invoice properly, and get paid on time.') }}</p>
             <form class="search" action="{{ route('creators.index') }}" method="get" role="search">
@@ -23,7 +23,6 @@
                 <span>{{ __('Creators') }}</span>
                 <span>{{ __('Editors') }}</span>
                 <span>{{ __('Brands') }}</span>
-                <span>{{ __('Managers') }}</span>
             </div>
         </div>
         <aside class="hero-card">
@@ -116,7 +115,7 @@
         <article class="card"><h3>{{ __('Creators') }}</h3><p class="muted">{{ __('A public media kit, optional Instagram connection, and an enquiry form anyone can use.') }}</p></article>
         <article class="card"><h3>{{ __('Editors') }}</h3><p class="muted">{{ __('Apply, get verified, then run structured projects with files and revision limits.') }}</p></article>
         <article class="card"><h3>{{ __('Brands') }}</h3><p class="muted">{{ __('Verify the company, publish campaigns, compare applicants, then negotiate.') }}</p></article>
-        <article class="card"><h3>{{ __('Managers') }}</h3><p class="muted">{{ __('Delegated inbox and deals under a subscription. Creator can revoke instantly.') }}</p></article>
+        <article class="card"><h3>{{ __('Instagram AutoDM') }}</h3><p class="muted">{{ __('Turn comments into conversations with keyword automations, using official Instagram APIs only.') }}</p></article>
         <article class="card"><h3>{{ __('Instagram intelligence') }}</h3><p class="muted">{{ __('Official Instagram data only, with your permission. Numbers are never invented.') }}</p></article>
         <article class="card"><h3>{{ __('Protected payments') }}</h3><p class="muted">{{ __('Money is held safely until the work is accepted, then released.') }}</p></article>
     </div>
@@ -209,19 +208,24 @@
 <section class="wrap section">
     <div class="section-head">
         <div>
-            <h2>{{ __('Creator management') }}</h2>
-            <p class="muted">{{ __('Plans for creators who want their inbox and deals handled for them.') }}</p>
+            <h2>{{ __('Instagram AutoDM') }}</h2>
+            <p class="muted">{{ __('Turn comments on your posts and reels into conversations, automatically.') }}</p>
         </div>
-        <a href="{{ route('pricing') }}">{{ __('Compare plans') }}</a>
+        <a href="{{ config('vidlix.domains.autodm') }}">{{ __('See AutoDM') }}</a>
     </div>
     <div class="grid">
-        @foreach($plans as $plan)
-            <article class="card">
-                <h3>{{ $plan->name }}</h3>
-                <p class="stat">₹{{ number_format($plan->price_minor / 100, 0) }}</p>
-                <p class="muted">{{ implode(' · ', $plan->features['bullets'] ?? []) }}</p>
-            </article>
-        @endforeach
+        <article class="card">
+            <h3>{{ __('Keyword triggers') }}</h3>
+            <p class="muted">{{ __('Pick a post, choose the words to watch for, and write the reply once. Every matching comment gets it.') }}</p>
+        </article>
+        <article class="card">
+            <h3>{{ __('Official APIs only') }}</h3>
+            <p class="muted">{{ __('Connected through Instagram itself. We never ask for your password, and nothing is scraped or automated behind its back.') }}</p>
+        </article>
+        <article class="card">
+            <h3>{{ __('Honest about limits') }}</h3>
+            <p class="muted">{{ __('Instagram allows a reply to someone who commented, within a limited window. We show you exactly what will and will not be sent before you turn it on.') }}</p>
+        </article>
     </div>
 </section>
 
@@ -261,7 +265,7 @@
     <div class="wrap">
         <p class="kicker">{{ __('Get started') }}</p>
         <h2>{{ __('Publish a desk the industry can actually work with.') }}</h2>
-        <p class="lede" style="margin-inline:auto;">{{ __('Join as a creator, editor, or brand. Managers arrive by invitation.') }}</p>
+        <p class="lede" style="margin-inline:auto;">{{ __('Join as a creator, an editor, or a brand — on one account.') }}</p>
         <p style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
             <a class="btn" href="{{ route('register') }}">{{ __('Create account') }}</a>
             <a class="btn secondary" href="{{ route('pages.show', 'contact') }}">{{ __('Talk to us') }}</a>

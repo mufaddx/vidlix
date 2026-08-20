@@ -5,6 +5,22 @@ return [
     'public_form_honeypot' => 'company_website',
 
     /*
+     | The four faces of Vidlix. They are separate hosts rather than path
+     | prefixes because they are separate products with separate audiences: a
+     | visitor reading the landing page and a staff member opening the admin
+     | panel should never be one redirect away from each other.
+     |
+     | Defaults are the production hosts on purpose. A deploy that forgets one
+     | of these should point at the real site, not at example.com.
+     */
+    'domains' => [
+        'site' => rtrim((string) env('APP_URL', 'https://vidlix.in'), '/'),
+        'app' => rtrim((string) env('APP_APP_URL', 'https://app.vidlix.in'), '/'),
+        'autodm' => rtrim((string) env('AUTODM_APP_URL', 'https://autodm.vidlix.in'), '/'),
+        'admin' => rtrim((string) env('ADMIN_APP_URL', 'https://admin.vidlix.in'), '/'),
+    ],
+
+    /*
      | The Android build the app should be running.
      |
      | Vidlix is not on Play Store yet, so the app cannot be updated by the
@@ -84,8 +100,23 @@ return [
         'driver' => env('EMAIL_PROVIDER', 'unconfigured'),
         'api_key' => env('EMAIL_API_KEY'),
         'api_base' => env('EMAIL_API_BASE'),
-        'from_address' => env('MAIL_FROM_ADDRESS'),
+        'from_address' => env('MAIL_FROM_ADDRESS', 'no-reply@vidlix.in'),
         'from_name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Vidlix')),
+
+        /*
+         | Who each kind of mail comes from. These are resolved server-side from
+         | the conversation's own scope — never from anything a client sends —
+         | so a sender address cannot be spoofed by asking for it.
+         */
+        'identities' => [
+            'creator' => env('MAIL_FROM_CREATOR', 'creator@vidlix.in'),
+            'editor' => env('MAIL_FROM_EDITOR', 'editor@vidlix.in'),
+            'brand' => env('MAIL_FROM_BRAND', 'brand@vidlix.in'),
+            'notifications' => env('MAIL_FROM_NOTIFICATIONS', 'notifications@vidlix.in'),
+            'noreply' => env('MAIL_FROM_NOREPLY', 'no-reply@vidlix.in'),
+            'help' => env('MAIL_FROM_HELP', 'help@vidlix.in'),
+            'billing' => env('MAIL_FROM_BILLING', 'billing@vidlix.in'),
+        ],
         // Reply-To routing: reply+<routing_token>@<inbound_domain>
         'inbound_domain' => env('EMAIL_INBOUND_DOMAIN'),
         'reply_prefix' => env('EMAIL_REPLY_PREFIX', 'reply'),

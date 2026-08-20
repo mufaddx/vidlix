@@ -11,7 +11,6 @@ use App\Models\ContactFormVersion;
 use App\Models\Faq;
 use App\Models\FeaturedCreator;
 use App\Models\HomepageSection;
-use App\Models\ManagementPlan;
 use App\Models\Role;
 use App\Models\SocialPlatform;
 use App\Models\Testimonial;
@@ -30,7 +29,6 @@ class DatabaseSeeder extends Seeder
             'creator' => 'Creator',
             'editor' => 'Editor',
             'brand' => 'Brand',
-            'manager' => 'Manager',
             'super_admin' => 'Super Admin',
             'operations' => 'Operations',
             'verification' => 'Verification',
@@ -96,9 +94,9 @@ class DatabaseSeeder extends Seeder
         // what this platform actually does; each still ends by saying it wants
         // counsel's eye before anyone relies on it commercially.
         $termsBody = <<<'TEXT'
-Vidlix is a marketplace where creators, brands, editors and managers find each other and work together. By using it you agree to these terms.
+Vidlix is a marketplace where creators, editors and brands find each other and work together. By using it you agree to these terms.
 
-1. Accounts. You must give a real name and a working email address, and you are responsible for what happens under your login. Roles (creator, brand, editor, manager) are applied for and granted after review.
+1. Accounts. You must give a real name and a working email address, and you are responsible for what happens under your login. Roles (creator, editor, brand) are applied for and granted after review.
 
 2. What we do and do not do. Vidlix hosts the agreement, the conversation, the files and the money rail. Vidlix is not a party to the work itself and does not guarantee that either side performs.
 
@@ -166,10 +164,9 @@ TEXT;
             ['for-creators', 'For creators', 'Publish a public media kit, receive brand inquiries without forcing registration, and keep Instagram insights official.'],
             ['for-editors', 'For editors', 'Apply, get verified, then run projects with files, revision limits, and a real invoice path.'],
             ['for-brands', 'For brands', 'Verify the company, publish campaigns, compare applicants, and settle only after a signed provider webhook.'],
-            ['for-managers', 'For managers', 'Managers join by invitation. Access is delegated, revocable, and never a substitute for the creator account.'],
             ['press', 'Press', 'For product facts and brand assets, use the contact page. Do not invent metrics in coverage.'],
             ['security', 'Trust & security', 'RBAC, audit logs, webhook signatures, and a ledger that is never faked in the UI.'],
-            ['about', 'About', 'Vidlix is a professional collaboration marketplace for creators, editors, brands, and authorized managers.'],
+            ['about', 'About', 'Vidlix is a professional collaboration marketplace for creators, editors and brands.'],
             ['faq', 'FAQ', 'See the homepage FAQ. Additional policies are listed in the footer.'],
             ['contact', 'Contact', 'For platform support open a ticket after login, or use a creator public page to send a brand inquiry.'],
             ['careers', 'Careers', 'We hire operators, verification specialists, and finance ops. Write to the operator once mail is configured.'],
@@ -178,10 +175,9 @@ TEXT;
             ['cookie', 'Cookie policy', 'Essential cookies keep sessions secure. Analytics cookies are opt-in.'],
             ['refund', 'Refund policy', $refundBody],
             ['dispute-policy', 'Dispute policy', 'Open a dispute from the project workspace. Evidence (chat, files, invoices, payments) is retained.'],
-            ['creator-terms', 'Creator terms', 'Creators own their profile. Managers receive delegated permissions only.'],
+            ['creator-terms', 'Creator terms', 'Creators own their profile, their audience and their public page.'],
             ['brand-terms', 'Brand terms', 'Brands publish campaigns after verification and pay through the marketplace provider.'],
             ['editor-terms', 'Editor terms', 'Editors deliver through the project workspace. Raw files stay in object storage.'],
-            ['management-terms', 'Management terms', 'Management is a subscription. Access ends on revoke or expiry; history is preserved.'],
             ['community', 'Community guidelines', 'No spam, scraping, fake analytics, or off-platform payment circumvention.'],
         ] as [$slug, $title, $body]) {
             CmsPage::query()->updateOrCreate(['slug' => $slug], [
@@ -207,12 +203,6 @@ TEXT;
             'sort_order' => 3,
             'is_published' => true,
         ]);
-        Faq::query()->updateOrCreate(['question' => 'Can a manager see payout accounts?'], [
-            'answer' => 'Not by default. Bank and Instagram disconnect stay with the creator unless a permission is explicitly granted.',
-            'sort_order' => 4,
-            'is_published' => true,
-        ]);
-
         Testimonial::query()->updateOrCreate(['author_name' => 'Mursalim'], [
             'author_role' => 'Creator',
             'quote' => 'The public page is the media kit. Brands write in without creating an account.',
@@ -232,25 +222,11 @@ TEXT;
             'is_published' => true,
         ]);
 
-        ManagementPlan::query()->updateOrCreate(['slug' => 'basic'], [
-            'name' => 'Basic',
-            'price_minor' => 499900,
-            'currency' => 'INR',
-            'features' => ['bullets' => ['Inbox assistance']],
-            'is_active' => true,
-        ]);
-        ManagementPlan::query()->updateOrCreate(['slug' => 'pro'], [
-            'name' => 'Pro',
-            'price_minor' => 999900,
-            'currency' => 'INR',
-            'features' => ['bullets' => ['Inbox', 'Campaigns', 'Negotiation']],
-            'is_active' => true,
-        ]);
-        ManagementPlan::query()->updateOrCreate(['slug' => 'premium'], [
-            'name' => 'Premium',
-            'price_minor' => 1999900,
-            'currency' => 'INR',
-            'features' => ['bullets' => ['Full collaboration management']],
+        // The platform's own cut, in basis points. One active rule named
+        // 'default' — the pricing page and the ledger both read this row, so
+        // they cannot disagree.
+        CommissionRule::query()->updateOrCreate(['slug' => 'default'], [
+            'bps' => 1000,
             'is_active' => true,
         ]);
 

@@ -65,7 +65,8 @@ class AppSignupContractTest extends TestCase
         $this->withToken($token)
             ->postJson('/api/v1/roles/apply', ['role' => 'editor'])
             ->assertCreated()
-            ->assertJsonPath('data.already_held', false);
+            // Applying is not becoming: an editor profile waits for review.
+            ->assertJsonPath('data.status', 'pending');
 
         $this->assertContains('editor', $user->fresh()->roleSlugs());
     }
@@ -80,8 +81,8 @@ class AppSignupContractTest extends TestCase
 
         $this->withToken($token)
             ->postJson('/api/v1/roles/apply', ['role' => 'editor'])
-            ->assertOk()
-            ->assertJsonPath('data.already_held', true);
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'pending');
     }
 
     public function test_nobody_can_make_themselves_a_manager(): void

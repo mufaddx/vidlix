@@ -13,16 +13,15 @@ use App\Models\DeviceToken;
 use App\Models\Invoice;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
-use App\Models\ManagerAssignment;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\Role;
 use App\Models\Withdrawal;
-use App\Services\Audit\AuditLogger;
 use App\Services\Email\OutboundEmailService;
-use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
 use App\Services\Marketplace\MarketplaceEngine;
+use App\Services\Profiles\ProfileApplications;
+use App\Services\Profiles\ProfileDirectory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -117,22 +116,6 @@ class WorkspaceApiController extends Controller
             ->paginate(20));
     }
 
-    public function managers(Request $request): JsonResponse
-    {
-        return $this->ok($request, [
-            'representing' => ManagerAssignment::query()
-                ->active()
-                ->where('manager_user_id', $request->user()->id)
-                ->with('owner:id,name,email')
-                ->get(),
-            'my_managers' => ManagerAssignment::query()
-                ->active()
-                ->where('owner_user_id', $request->user()->id)
-                ->with('manager:id,name,email')
-                ->get(),
-        ]);
-    }
-
     public function postMessage(Request $request, string $uuid, MarketplaceEngine $engine): JsonResponse
     {
         $conversation = Conversation::query()->where('conversation_uuid', $uuid)->firstOrFail();
@@ -152,7 +135,6 @@ class WorkspaceApiController extends Controller
         $outbound = app(OutboundEmailService::class);
         $message = $conversation->messages()->create([
             'actor_user_id' => $request->user()->id,
-            'acting_for_creator_id' => session('acting_for_creator_id'),
             'direction' => 'outbound',
             'body' => $data['body'],
             'delivery_status' => $outbound->initialStatus(),
@@ -200,30 +182,32 @@ class WorkspaceApiController extends Controller
      * Take on another role from the phone.
      *
      * The same rules as the website: an account is an account, and a person
-     * adds creator, editor or brand to it whenever they decide to. Manager is
+     * adds creator, editor or brand to it whenever they decide to. There is
      * absent on purpose - nobody applies to be one.
      */
-    public function applyForRole(Request $request, AccountProvisioner $provisioner, AuditLogger $audit): JsonResponse
+    public function applyForRole(Request $request, ProfileApplications $applications, ProfileDirectory $directory): JsonResponse
     {
         $data = $request->validate([
             'role' => ['required', 'in:creator,editor,brand'],
         ]);
 
         $user = $request->user();
-
-        if (in_array($data['role'], $user->roleSlugs(), true)) {
-            return $this->ok($request, ['roles' => $user->roleSlugs(), 'already_held' => true]);
-        }
-
-        $role = Role::query()->where('slug', $data['role'])->firstOrFail();
-        $user->roles()->attach($role);
-        $provisioner->provisionRole($user, $role->slug);
-        $audit->record('role.applied', $user, ['role' => $role->slug]);
+        $result = $applications->apply($user, $data['role']);
 
         return $this->ok($request, [
-            'roles' => $user->fresh()->roleSlugs(),
-            'already_held' => false,
+            'status' => $result['status'],
+            'message' => $result['message'],
+            'profiles' => $directory->forUser($user->fresh()),
         ], 201);
+    }
+
+    /** Every profile on this account and what state each one is in. */
+    public function profiles(Request $request, ProfileDirectory $directory): JsonResponse
+    {
+        return $this->ok($request, [
+            'profiles' => $directory->forUser($request->user()),
+            'active' => session('active_role'),
+        ]);
     }
 
     public function registerDevice(Request $request): JsonResponse
