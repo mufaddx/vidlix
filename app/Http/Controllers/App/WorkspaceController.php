@@ -240,7 +240,7 @@ class WorkspaceController extends Controller
 
     public function submitCampaign(Campaign $campaign): RedirectResponse
     {
-        abort_unless($campaign->brand_profile_id === request()->user()->brandProfile?->id, 403);
+        abort_unless(request()->user()->can('manage', $campaign), 404);
         $campaign->update(['status' => 'pending_review']);
 
         return back()->with('status', __('Campaign sent for review.'));
@@ -273,7 +273,7 @@ class WorkspaceController extends Controller
 
     public function applicationStatus(Request $request, CampaignApplication $application): RedirectResponse
     {
-        abort_unless($application->campaign->brand_profile_id === $request->user()->brandProfile?->id, 403);
+        abort_unless($request->user()->can('manage', $application->campaign), 404);
         $data = $request->validate(['status' => ['required', 'string']]);
         $this->engine->transitionApplication($application, $data['status']);
 
@@ -305,7 +305,7 @@ class WorkspaceController extends Controller
 
     public function showProject(Project $project): View
     {
-        abort_unless($project->involves(request()->user()), 403);
+        abort_unless(request()->user()->can('view', $project), 404);
         $project->load(['files', 'revisions']);
         $payments = Payment::query()->where('payable_type', Project::class)->where('payable_id', $project->id)->latest()->get();
         $invoices = Invoice::query()->where('invoiceable_type', Project::class)->where('invoiceable_id', $project->id)->latest()->get();
@@ -315,7 +315,7 @@ class WorkspaceController extends Controller
 
     public function projectTransition(Request $request, Project $project): RedirectResponse
     {
-        abort_unless($project->involves($request->user()), 403);
+        abort_unless($request->user()->can('participate', $project), 404);
         $this->engine->transitionProject($project, $request->validate(['status' => ['required']])['status']);
 
         return back();
@@ -323,7 +323,7 @@ class WorkspaceController extends Controller
 
     public function projectFile(Request $request, Project $project): RedirectResponse
     {
-        abort_unless($project->involves($request->user()), 403);
+        abort_unless($request->user()->can('participate', $project), 404);
         $request->validate(['file' => ['required', 'file'], 'kind' => ['required', 'string']]);
         $this->engine->storeProjectFile($project, $request->user(), $request->file('file'), $request->string('kind')->toString(), $request->boolean('watermarked'));
 
@@ -332,7 +332,7 @@ class WorkspaceController extends Controller
 
     public function projectRevision(Request $request, Project $project): RedirectResponse
     {
-        abort_unless($project->involves($request->user()), 403);
+        abort_unless($request->user()->can('participate', $project), 404);
         $this->engine->requestRevision($project, $request->user(), $request->validate(['feedback' => ['required', 'string']])['feedback']);
 
         return back()->with('status', __('Revision requested.'));
@@ -340,7 +340,7 @@ class WorkspaceController extends Controller
 
     public function projectPay(Request $request, Project $project): RedirectResponse
     {
-        abort_unless($project->involves($request->user()), 403);
+        abort_unless($request->user()->can('participate', $project), 404);
         $amount = (int) $request->validate(['amount_minor' => ['required', 'integer', 'min:1']])['amount_minor'];
         $payment = $this->engine->requestPayment($request->user(), $project, $amount, 'project');
 
@@ -366,7 +366,7 @@ class WorkspaceController extends Controller
     public function showChat(string $uuid): View
     {
         $conversation = Conversation::query()->where('conversation_uuid', $uuid)->where('channel', 'internal')->with('messages')->firstOrFail();
-        abort_unless($conversation->participants()->where('user_id', request()->user()->id)->exists(), 403);
+        abort_unless(request()->user()->can('view', $conversation), 404);
 
         return view('app.chat-show', compact('conversation'));
     }
@@ -457,7 +457,7 @@ class WorkspaceController extends Controller
             'statement' => ['required', 'string'],
         ]);
         $project = Project::query()->findOrFail($data['project_id']);
-        abort_unless($project->involves($request->user()), 403);
+        abort_unless($request->user()->can('participate', $project), 404);
         $this->engine->openDispute($request->user(), $project, $data['reason'], $data['statement']);
 
         return back()->with('status', __('Dispute opened with evidence chain placeholders.'));
@@ -593,7 +593,7 @@ class WorkspaceController extends Controller
     public function invoicePdf(Request $request, Invoice $invoice, InvoicePdf $pdf): Response
     {
         $id = $request->user()->id;
-        abort_unless($invoice->seller_user_id === $id || $invoice->buyer_user_id === $id, 404);
+        abort_unless(request()->user()->can('view', $invoice), 404);
 
         return response($pdf->render($invoice), 200, [
             'Content-Type' => 'application/pdf',

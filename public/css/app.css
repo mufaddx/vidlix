@@ -36,6 +36,7 @@
   --ok-bg: #e8f7f0;
   --ok-line: #bde5d4;
   --danger: #c22a2a;
+  --warn: #b25e00;
 
   --footer-bg: #101219;
   --footer-ink: #c6cad8;
@@ -85,6 +86,7 @@
     --ok-bg: #10231b;
     --ok-line: #1f4435;
     --danger: #f28b8b;
+    --warn: #f0a95a;
 
     --footer-bg: #0a0c11;
     --footer-ink: #c6cad8;
@@ -124,6 +126,7 @@
   --ok-bg: #10231b;
   --ok-line: #1f4435;
   --danger: #f28b8b;
+  --warn: #f0a95a;
 
   --footer-bg: #0a0c11;
   --footer-ink: #c6cad8;
@@ -532,3 +535,34 @@ body.nav-locked { overflow: hidden; }
 .reveal[aria-pressed="true"] .icon-show { display: none; }
 .reveal[aria-pressed="true"] .icon-hide { display: block; }
 .reveal:hover { color: var(--ink); background: var(--bg-sunken); }
+
+/* ------------------------------------------------------------------------
+   Shared page states (partials/state.blade.php).
+
+   One appearance for every "not ready" state, so a suspended account and a
+   pending verification do not look like two different products. The accent
+   carries the meaning; the layout stays identical, because a state that
+   rearranges the page makes the reader re-find everything.
+   ------------------------------------------------------------------------ */
+.state {
+    border-left: 3px solid var(--line);
+    padding: 20px;
+}
+
+.state .kicker { margin-bottom: 4px; }
+.state h2 { margin: 0 0 8px; font-size: 18px; }
+.state p:last-child { margin-bottom: 0; }
+
+.state-suspended,
+.state-verification_rejected { border-left-color: var(--danger); }
+
+.state-verification_pending,
+.state-more_info,
+.state-rate_limited,
+.state-provider_disconnected { border-left-color: var(--warn); }
+
+.state-provider_unconfigured,
+.state-offline,
+.state-empty { border-left-color: var(--line); }
+
+.state-error { border-left-color: var(--danger); }

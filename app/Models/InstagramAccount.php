@@ -4,7 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property list<string>|null $granted_scopes what Meta actually granted, which
+ *                                             is not the same as what was asked for
+ * @property Carbon|null $token_expires_at
+ * @property Carbon|null $authorized_at
+ * @property Carbon|null $last_synced_at
+ */
 class InstagramAccount extends Model
 {
     protected $fillable = [

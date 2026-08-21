@@ -21,8 +21,9 @@ class ProjectFileController extends Controller
 {
     public function download(Request $request, ProjectFile $file, MediaStorage $media, AuditLogger $audit): RedirectResponse|StreamedResponse
     {
-        $project = $file->project;
-        abort_unless($project && $project->involves($request->user()), 403);
+        // Authorised before a signed URL is issued, never after: a signed URL
+        // in the wrong hands works for as long as it lives, whoever follows it.
+        abort_unless($request->user()->can('download', $file), 404);
 
         $disk = $file->disk ?: 'local';
         abort_unless(Storage::disk($disk)->exists($file->storage_key), 404);

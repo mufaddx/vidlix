@@ -200,16 +200,9 @@ class InboxController extends Controller
     {
         $user = $request->user();
 
-        $conversation = Conversation::query()
-            ->where('conversation_uuid', $uuid)
-            ->where('channel', '!=', 'support')
-            ->where(function ($q) use ($user) {
-                $q->where('owner_user_id', $user->id)
-                    ->orWhereHas('participants', fn ($p) => $p->where('user_id', $user->id));
-            })
-            ->first();
+        $conversation = Conversation::query()->where('conversation_uuid', $uuid)->first();
 
-        abort_unless($conversation !== null, 404);
+        abort_unless($conversation !== null && $user->can('view', $conversation), 404);
 
         return $conversation;
     }

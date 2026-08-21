@@ -158,7 +158,7 @@ class NegotiationController extends Controller
         $negotiation = Negotiation::query()->where('uuid', $uuid)->first();
 
         abort_unless(
-            $negotiation !== null && $negotiation->involves($request->user()->id),
+            $negotiation !== null && $request->user()->can('view', $negotiation),
             404,
         );
 
