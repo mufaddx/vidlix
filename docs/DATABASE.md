@@ -9,7 +9,7 @@ unit (paise), always integers — floats lose money.
 |---|---|
 | `users` | One human, one account, however many roles |
 | `roles`, `permissions` | Plus pivots |
-| `creator_profiles`, `editor_profiles`, `brand_profiles` | One per role held |
+| `creator_profiles`, `editor_profiles`, `brand_profiles` | One per role held. Editor applications carry their own review trail — submitted, reviewed, by whom, and the note the applicant is shown |
 | `usernames` | **The registry.** One unique index across creators and editors |
 | `reserved_usernames` | Router paths and platform words |
 | `username_history` | Retired handles, so old links redirect |
@@ -58,7 +58,7 @@ That restrict is deliberate: it protects the provenance of every answer.
 
 | Table | Notes |
 |---|---|
-| `campaigns` | Plus follower range, engagement, work mode, usage/revision/payment terms |
+| `campaigns` | Plus follower range, engagement, work mode, usage/revision/payment terms. `published_at` and `closed_at` are deliberately not fillable — they are stamped by the lifecycle, and a mass-assignable date is a date somebody can post |
 | `campaign_applications` | |
 | `negotiations` | Both sides by user; `accepted_offer_id` denormalised |
 | `negotiation_offers` | **Append-only.** Unique on `(negotiation, sequence)` |

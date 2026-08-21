@@ -1,7 +1,7 @@
 # Testing
 
 ```bash
-php artisan test                      # 343 tests, ~30s
+php artisan test                      # 408 tests, ~40s
 php artisan test --filter=AutoDmTest  # one file
 vendor/bin/pint --test                # formatting
 vendor/bin/phpstan analyse            # static analysis
@@ -26,6 +26,10 @@ merge — the guarantee comes from the gate, not from remembering to run them.
 | `PaymentSettlementTest`, `PayoutAndStorageTest` | Signatures, ledger, payouts |
 | `EmailIntegrationTest`, `ResendEmailTest`, `UnifiedInboxTest` | Threading |
 | `AdminPanelTest` | Abilities, and that removed pages stay removed |
+| `CampaignLifecycleTest` | Permitted moves, self-approval refused, closing declines the waiting |
+| `EditorApplicationTest` | That terms and submission are not approval |
+| `MediaStorageTest` | Content sniffing, opaque keys, signed-URL expiry |
+| `RefundAndReconciliationTest` | Appended reversals, lost webhooks, inconclusive answers |
 
 ## How these tests are written
 
@@ -52,10 +56,13 @@ the platform's own logic.
 3. Offer → counter → accept → project with milestones
 4. Comment webhook → keyword match → run recorded → duplicate delivery ignored
 5. Stranger attempts every bound route → 404 throughout, nothing mutated
+6. Editor drafts → accepts terms → submits → reviewer asks for more → resubmits
+   → approved → appears at their public address
+7. Campaign drafted → reviewed → published → paused → closed, with everyone
+   still waiting told it is over
 
 ## Not yet covered
 
-- Payments reconciliation and refunds
 - Signed-URL issuance against a real S3/R2 disk
 - Live provider calls of any kind
 - Staging DAST

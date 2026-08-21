@@ -17,7 +17,7 @@ Creator × Editor × Brand marketplace, plus Instagram AutoDM.
 ## Commands
 
 ```bash
-php artisan test                # 343 tests
+php artisan test                # 408 tests
 vendor/bin/pint                 # format
 vendor/bin/phpstan analyse      # static analysis
 npx playwright test             # browser
@@ -59,6 +59,7 @@ app/Services/Deals/      negotiations, milestones, shortlists
 app/Services/Domains/    custom hostnames
 app/Services/Forms/      contact form builder and submissions
 app/Services/Identity/   username registry
+app/Services/Profiles/   role applications and their review
 app/Support/Forms/       schema contract and answer validation
 resources/views/partials/state.blade.php   every "not ready" state
 ```
