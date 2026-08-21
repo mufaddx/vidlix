@@ -14,6 +14,108 @@ Target: PHP 8.4+, MySQL, SSL, document root `public/`.
 4. `chmod`/`chown` so `storage/` and `bootstrap/cache/` are writable by the web
    user.
 
+## 1b. The four subdomains — all one document root
+
+This is the step that is most often got wrong, so it has its own section.
+
+Vidlix serves four hosts from **one** Laravel application. `app`, `autodm` and
+`admin` are not three separate installs; the host is what decides which part of
+the product a visitor sees, and the session, database and authorization rules
+are shared precisely because the code is.
+
+So all four must point at the **same** directory:
+
+| Host | Document root |
+|---|---|
+| `vidlix.in` | `/home/USER/vidlix/public` |
+| `app.vidlix.in` | `/home/USER/vidlix/public` |
+| `autodm.vidlix.in` | `/home/USER/vidlix/public` |
+| `admin.vidlix.in` | `/home/USER/vidlix/public` |
+
+### What goes wrong
+
+hPanel's *Create a New Subdomain* defaults to a folder named after the
+subdomain:
+
+```
+admin.vidlix.in  → /home/USER/domains/vidlix.in/public_html/admin     ✗
+autodm.vidlix.in → /home/USER/domains/vidlix.in/public_html/autodm    ✗
+app.vidlix.in    → /home/USER/domains/vidlix.in/public_html/app       ✗
+```
+
+Those are three empty folders. Every subdomain will 404, because the application
+is not in any of them.
+
+### Doing it right
+
+1. Put the application **beside** `public_html`, never inside it:
+
+   ```
+   /home/USER/vidlix/          the app — .env, app/, vendor/, storage/
+   /home/USER/vidlix/public/   the only directory the web may reach
+   ```
+
+2. Delete any subdomain already created with a per-subdomain folder.
+
+3. Recreate each one with **“Custom folder for subdomain”** ticked, and give all
+   three the identical path:
+
+   ```
+   /home/USER/vidlix/public
+   ```
+
+4. Point the main domain at the same place. If hPanel will not let you change
+   the root for the main domain, replace `public_html` with a symlink:
+
+   ```
+   rm -rf ~/public_html
+   ln -s ~/vidlix/public ~/public_html
+   ```
+
+### Checking it
+
+```
+curl -sI https://vidlix.in/up        | head -1
+curl -sI https://app.vidlix.in/up    | head -1
+curl -sI https://autodm.vidlix.in/up | head -1
+curl -sI https://admin.vidlix.in/up  | head -1
+```
+
+Four `200`s means the roots are right. Any `404` means that host is pointing
+somewhere else.
+
+Then confirm each face actually answers:
+
+- `https://vidlix.in/` — the landing page
+- `https://app.vidlix.in/login` — member sign-in
+- `https://autodm.vidlix.in/autodm` — the AutoDM page
+- `https://admin.vidlix.in/admin/login` — the **staff** sign-in, not the member one
+
+### Never do this
+
+Do not move the application into `public_html` to make the paths line up. That
+puts `.env`, `storage/` and `vendor/` on the public web — every credential the
+platform holds, readable by anyone who guesses the path.
+
+## 1c. Check it before anyone else does
+
+```
+php artisan vidlix:preflight
+```
+
+Reports two kinds of thing.
+
+**Blockers** are faults: debug left on, uploads landing on the web server's own
+disk, a domain still pointing at localhost, a database that will not answer.
+The command exits non-zero, so it can gate a deploy.
+
+**Notes** are features that are simply off — no payment provider, no Instagram,
+no Turnstile. That is a legitimate way to launch: each one refuses honestly in
+the interface rather than pretending, so the site can go live in stages.
+
+Run it after every deploy. A checklist somebody reads is a checklist somebody
+skips a line of.
+
 ## 2. Environment
 
 Copy `.env.example` to `.env` and fill it in. Never commit `.env`.
