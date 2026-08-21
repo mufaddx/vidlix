@@ -160,6 +160,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/app/campaigns', [WorkspaceController::class, 'campaigns'])->name('app.campaigns');
         Route::post('/app/campaigns', [WorkspaceController::class, 'storeCampaign'])->name('app.campaigns.store')->middleware('feature:campaign_publishing');
         Route::post('/app/campaigns/{campaign}/submit', [WorkspaceController::class, 'submitCampaign'])->name('app.campaigns.submit');
+        Route::post('/app/campaigns/{campaign}/transition', [WorkspaceController::class, 'campaignTransition'])->name('app.campaigns.transition');
+        Route::get('/app/campaigns/{campaign}/applicants', [WorkspaceController::class, 'campaignApplicants'])->name('app.campaigns.applicants');
+        Route::post('/app/campaigns/{campaign}/shortlist', [WorkspaceController::class, 'shortlistApplicant'])->name('app.campaigns.shortlist');
         Route::post('/app/campaigns/{campaign}/apply', [WorkspaceController::class, 'applyCampaign'])->name('app.campaigns.apply');
         Route::get('/applications', [WorkspaceController::class, 'applications'])->name('app.applications');
         Route::post('/applications/{application}', [WorkspaceController::class, 'applicationStatus'])->name('app.applications.status');
@@ -224,6 +227,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/settings/privacy', [PrivacyController::class, 'destroy'])->middleware('throttle:3,60')->name('app.privacy.destroy');
         Route::get('/portfolio', [WorkspaceController::class, 'portfolio'])->name('app.portfolio');
         Route::post('/portfolio', [WorkspaceController::class, 'storePortfolio'])->name('app.portfolio.store');
+        Route::post('/portfolio/reorder', [WorkspaceController::class, 'reorderPortfolio'])->name('app.portfolio.reorder');
+        Route::post('/portfolio/{item}', [WorkspaceController::class, 'updatePortfolio'])->name('app.portfolio.update');
+        Route::delete('/portfolio/{item}', [WorkspaceController::class, 'destroyPortfolio'])->name('app.portfolio.destroy');
         /*
          | Negotiations. No route carries an offer id: accepting always means
          | accepting whatever is currently on the table, so a stale offer

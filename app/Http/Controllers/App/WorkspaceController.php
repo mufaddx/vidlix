@@ -12,7 +12,9 @@ use App\Models\BrandProfile;
 use App\Models\Campaign;
 use App\Models\CampaignApplication;
 use App\Models\Conversation;
+use App\Models\CreatorProfile;
 use App\Models\Dispute;
+use App\Models\EditorProfile;
 use App\Models\Invoice;
 use App\Models\LedgerEntry;
 use App\Models\Payment;
@@ -25,8 +27,10 @@ use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Audit\AuditLogger;
 use App\Services\Billing\InvoicePdf;
+use App\Services\Deals\ShortlistService;
 use App\Services\Identity\AccountProvisioner;
 use App\Services\Ledger\LedgerService;
+use App\Services\Marketplace\CampaignLifecycle;
 use App\Services\Marketplace\MarketplaceEngine;
 use App\Services\Media\MediaStorage;
 use App\Services\Notifications\Notifier;
@@ -238,12 +242,98 @@ class WorkspaceController extends Controller
         return back()->with('status', __('Campaign drafted. Submit for review next.'));
     }
 
-    public function submitCampaign(Campaign $campaign): RedirectResponse
+    public function submitCampaign(Campaign $campaign, CampaignLifecycle $lifecycle): RedirectResponse
     {
         abort_unless(request()->user()->can('manage', $campaign), 404);
-        $campaign->update(['status' => 'pending_review']);
+
+        $lifecycle->transition($campaign, request()->user(), CampaignLifecycle::PENDING_REVIEW);
 
         return back()->with('status', __('Campaign sent for review.'));
+    }
+
+    /**
+     * Pause, close, reopen, cancel or complete.
+     *
+     * The permitted moves come from the lifecycle, not from the request, so a
+     * status posted by hand cannot skip a step.
+     */
+    public function campaignTransition(Request $request, Campaign $campaign, CampaignLifecycle $lifecycle): RedirectResponse
+    {
+        abort_unless($request->user()->can('manage', $campaign), 404);
+
+        $to = $request->validate([
+            'status' => ['required', 'string', 'max:32'],
+        ])['status'];
+
+        // Closing declines whatever is still waiting, so it has its own path.
+        if ($to === CampaignLifecycle::CLOSED) {
+            $lifecycle->close($campaign, $request->user());
+
+            return back()->with('status', __('Campaign closed. Anyone still waiting has been told.'));
+        }
+
+        $lifecycle->transition($campaign, $request->user(), $to);
+
+        return back()->with('status', __('Campaign updated.'));
+    }
+
+    /**
+     * Everyone who applied, for the brand that owns the campaign.
+     *
+     * Separate from the applications list because a brand deciding between
+     * applicants needs to compare them, and a flat list of every application
+     * across every campaign is not a comparison.
+     */
+    public function campaignApplicants(Request $request, Campaign $campaign, ShortlistService $shortlists): View
+    {
+        abort_unless($request->user()->can('manage', $campaign), 404);
+
+        $applications = CampaignApplication::query()
+            ->where('campaign_id', $campaign->id)
+            ->with('creator')
+            ->latest()
+            ->get();
+
+        return view('app.campaign-applicants', [
+            'campaign' => $campaign,
+            'applications' => $applications,
+            'shortlisted' => $shortlists->forCampaign($campaign)
+                ->pluck('subject_id')
+                ->all(),
+        ]);
+    }
+
+    public function shortlistApplicant(Request $request, Campaign $campaign, ShortlistService $shortlists): RedirectResponse
+    {
+        abort_unless($request->user()->can('manage', $campaign), 404);
+
+        $data = $request->validate([
+            'subject_type' => ['required', 'in:creator,editor'],
+            'subject_id' => ['required', 'integer'],
+            'shortlisted' => ['required', 'boolean'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        if ($data['shortlisted']) {
+            $shortlists->shortlist(
+                $campaign,
+                $request->user(),
+                $data['subject_type'],
+                (int) $data['subject_id'],
+                $data['note'] ?? null,
+            );
+
+            return back()->with('status', __('Added to the shortlist.'));
+        }
+
+        $shortlists->removeFromShortlist(
+            $campaign,
+            $request->user(),
+            $data['subject_type'],
+            (int) $data['subject_id'],
+        );
+
+        return back()->with('status', __('Removed from the shortlist.'));
     }
 
     public function applyCampaign(Request $request, Campaign $campaign): RedirectResponse
@@ -536,23 +626,131 @@ class WorkspaceController extends Controller
 
     public function portfolio(): View
     {
-        $user = request()->user();
-        $owner = $user->creatorProfile ?? $user->editorProfile;
-        abort_unless($owner !== null, 403);
-        $items = PortfolioItem::query()->where('owner_type', $owner::class)->where('owner_id', $owner->id)->get();
+        $owner = $this->portfolioOwner();
+
+        $items = PortfolioItem::query()
+            ->where('owner_type', $owner::class)
+            ->where('owner_id', $owner->id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
 
         return view('app.portfolio', compact('items'));
     }
 
-    public function storePortfolio(Request $request): RedirectResponse
+    public function storePortfolio(Request $request, MediaStorage $media): RedirectResponse
     {
-        $user = $request->user();
-        $owner = $user->creatorProfile ?? $user->editorProfile;
-        abort_unless($owner !== null, 403);
-        $data = $request->validate(['title' => ['required', 'string'], 'url' => ['nullable', 'url'], 'description' => ['nullable', 'string']]);
-        PortfolioItem::query()->create($data + ['owner_type' => $owner::class, 'owner_id' => $owner->id]);
+        $owner = $this->portfolioOwner();
 
-        return back()->with('status', __('Portfolio item saved. Media files use storage keys, not MySQL blobs.'));
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:160'],
+            'url' => ['nullable', 'url', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'file' => ['nullable', 'file'],
+        ]);
+
+        $key = null;
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            // Type and size are checked by the storage layer, which reads the
+            // file's contents rather than believing its name.
+            $media->assertAcceptable($file);
+
+            $key = $media->keyFor('portfolio/'.$owner->id, $file);
+            abort_unless($media->put($key, $file), 500);
+        }
+
+        PortfolioItem::query()->create([
+            'owner_type' => $owner::class,
+            'owner_id' => $owner->id,
+            'title' => $data['title'],
+            'url' => $data['url'] ?? null,
+            'description' => $data['description'] ?? null,
+            'storage_key' => $key,
+            // New items go last, which is where somebody adding one expects to
+            // find it.
+            'sort_order' => (int) PortfolioItem::query()
+                ->where('owner_type', $owner::class)
+                ->where('owner_id', $owner->id)
+                ->max('sort_order') + 1,
+        ]);
+
+        return back()->with('status', __('Added to your portfolio.'));
+    }
+
+    public function updatePortfolio(Request $request, PortfolioItem $item): RedirectResponse
+    {
+        $this->assertOwnsPortfolioItem($item);
+
+        $item->update($request->validate([
+            'title' => ['required', 'string', 'max:160'],
+            'url' => ['nullable', 'url', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ]));
+
+        return back()->with('status', __('Updated.'));
+    }
+
+    public function destroyPortfolio(PortfolioItem $item, MediaStorage $media): RedirectResponse
+    {
+        $this->assertOwnsPortfolioItem($item);
+
+        // The object goes with the row. Leaving it behind would mean paying to
+        // store a file nothing can reach.
+        if (filled($item->storage_key)) {
+            $media->delete($media->disk(), (string) $item->storage_key);
+        }
+
+        $item->delete();
+
+        return back()->with('status', __('Removed.'));
+    }
+
+    /** Reorder by a list of ids, which is what a drag-and-drop sends. */
+    public function reorderPortfolio(Request $request): RedirectResponse
+    {
+        $owner = $this->portfolioOwner();
+
+        $order = $request->validate([
+            'order' => ['required', 'array'],
+            'order.*' => ['integer'],
+        ])['order'];
+
+        // Scoped to the owner's own items, so an id from somebody else's
+        // portfolio in the list simply matches nothing.
+        foreach (array_values($order) as $position => $id) {
+            PortfolioItem::query()
+                ->whereKey($id)
+                ->where('owner_type', $owner::class)
+                ->where('owner_id', $owner->id)
+                ->update(['sort_order' => $position]);
+        }
+
+        return back()->with('status', __('Order saved.'));
+    }
+
+    /** The profile whose portfolio this is — creator first, then editor. */
+    private function portfolioOwner(): CreatorProfile|EditorProfile
+    {
+        $user = request()->user();
+        $owner = $user->creatorProfile ?? $user->editorProfile;
+
+        abort_unless($owner !== null, 403, __('Add a creator or editor profile first.'));
+
+        return $owner;
+    }
+
+    private function assertOwnsPortfolioItem(PortfolioItem $item): void
+    {
+        $owner = $this->portfolioOwner();
+
+        // A 404 rather than a 403: somebody guessing ids should not learn that
+        // an item exists.
+        abort_unless(
+            $item->owner_type === $owner::class && (int) $item->owner_id === (int) $owner->id,
+            404,
+        );
     }
 
     public function proposals(): View

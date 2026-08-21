@@ -12,6 +12,7 @@ use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Audit\AuditLogger;
+use App\Services\Marketplace\CampaignLifecycle;
 use App\Services\Marketplace\MarketplaceEngine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,12 +54,23 @@ class AdminOpsController extends Controller
         return back()->with('status', __('Brand updated.'));
     }
 
-    public function decideCampaign(Request $request, Campaign $campaign): RedirectResponse
+    /**
+     * Publish a campaign, or send it back.
+     *
+     * Routed through the lifecycle rather than writing the column, so a review
+     * decision obeys the same permitted-move rules as everything else and the
+     * brand is told either way.
+     */
+    public function decideCampaign(Request $request, Campaign $campaign, CampaignLifecycle $lifecycle): RedirectResponse
     {
-        $to = $request->validate(['decision' => ['required', 'in:published,cancelled']])['decision'];
-        $campaign->update(['status' => $to]);
+        $data = $request->validate([
+            'decision' => ['required', 'in:published,draft'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
 
-        return back()->with('status', __('Campaign updated.'));
+        $lifecycle->review($campaign, $request->user(), $data['decision'], $data['note'] ?? null);
+
+        return back()->with('status', __('Campaign updated and the brand has been told.'));
     }
 
     public function finance(): View

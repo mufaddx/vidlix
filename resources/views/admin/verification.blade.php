@@ -61,7 +61,9 @@
                 <td>
                     <form method="post" action="{{ route('admin.campaigns.decide', $c) }}" style="display:flex;gap:6px">@csrf
                         <button class="a-btn" name="decision" value="published">{{ __('Publish') }}</button>
-                        <button class="a-btn danger" name="decision" value="cancelled">{{ __('Cancel') }}</button>
+                        {{-- Sent back as a draft rather than cancelled: the brand
+                             can fix it and resubmit, which cancelling forecloses. --}}
+                        <button class="a-btn danger" name="decision" value="draft">{{ __('Send back') }}</button>
                     </form>
                 </td>
             </tr>
