@@ -27,6 +27,7 @@
                 <li><a href="{{ route('brands.index') }}">{{ __('Brands') }}</a></li>
                 <li><a href="{{ route('campaigns.index') }}">{{ __('Campaigns') }}</a></li>
                 <li><a href="{{ route('pricing') }}">{{ __('Pricing') }}</a></li>
+                <li><a href="{{ route('autodm.landing') }}">{{ __('Instagram AutoDM') }}</a></li>
                 <li><a href="{{ route('pages.show', 'how-it-works') }}">{{ __('How it works') }}</a></li>
                 <li><a href="{{ route('pages.show', 'for-creators') }}">{{ __('For creators') }}</a></li>
                 <li><a href="{{ route('pages.show', 'for-editors') }}">{{ __('For editors') }}</a></li>

@@ -14,6 +14,7 @@ use App\Models\Faq;
 use App\Models\FeaturedCreator;
 use App\Models\HomepageSection;
 use App\Models\Testimonial;
+use App\Services\AutoDm\Capabilities;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -56,6 +57,21 @@ class HomeController extends Controller
         $page = CmsPage::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
 
         return view('public.page', compact('page'));
+    }
+
+    /**
+     * The AutoDM product page.
+     *
+     * Its job is to be honest about limits as much as to sell: somebody who
+     * reads this and then finds out from an empty log that Instagram bounds
+     * private replies to a window has been misled, whatever the page said about
+     * everything else.
+     */
+    public function autodm(): View
+    {
+        return view('public.autodm', [
+            'windowHours' => Capabilities::PRIVATE_REPLY_WINDOW_HOURS,
+        ]);
     }
 
     public function pricing(): View

@@ -25,6 +25,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetFlowController;
 use App\Http\Controllers\Auth\SignupFlowController;
 use App\Http\Controllers\Auth\TwoFactorController;
+use App\Http\Controllers\AutoDm\AutoDmController;
 use App\Http\Controllers\Site\AppDownloadController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\PublicProfileController;
@@ -50,6 +51,7 @@ Route::get('/campaigns', [HomeController::class, 'campaigns'])->name('campaigns.
 Route::get('/blog', [HomeController::class, 'blog'])->name('blog.index');
 Route::get('/blog/{slug}', [HomeController::class, 'post'])->name('blog.show');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
+Route::get('/autodm', [HomeController::class, 'autodm'])->name('autodm.landing');
 Route::get('/p/{slug}', [HomeController::class, 'page'])->name('pages.show');
 Route::permanentRedirect('/u/{username}', '/{username}')->name('creators.public');
 Route::post('/u/{username}/inquire', fn (string $username) => redirect()->route('profile.contact', $username))
@@ -177,6 +179,26 @@ Route::middleware('auth')->group(function () {
         Route::get('/automations', [WorkspaceController::class, 'automations'])->name('app.automations');
         Route::post('/automations', [WorkspaceController::class, 'storeAutomation'])->name('app.automations.store');
         Route::get('/instagram', [WorkspaceController::class, 'instagram'])->name('app.instagram');
+
+        /*
+         | AutoDM. Served from autodm.vidlix.in in production; the paths live
+         | here so one deploy serves every face of the product, and the host is
+         | what tells them apart rather than a second application.
+         |
+         | The dashboard is /autodm/dashboard rather than /autodm, because
+         | /autodm is the public page explaining the product and a signed-in
+         | person arriving there should still be able to read it.
+         */
+        Route::get('/autodm/dashboard', [AutoDmController::class, 'index'])->name('autodm.index');
+        Route::get('/autodm/new', [AutoDmController::class, 'create'])->name('autodm.create');
+        Route::post('/autodm', [AutoDmController::class, 'store'])->name('autodm.store');
+        Route::get('/autodm/{uuid}/edit', [AutoDmController::class, 'edit'])->name('autodm.edit');
+        Route::post('/autodm/{uuid}', [AutoDmController::class, 'update'])->name('autodm.update');
+        Route::get('/autodm/{uuid}/review', [AutoDmController::class, 'review'])->name('autodm.review');
+        Route::post('/autodm/{uuid}/activate', [AutoDmController::class, 'activate'])->name('autodm.activate');
+        Route::post('/autodm/{uuid}/deactivate', [AutoDmController::class, 'deactivate'])->name('autodm.deactivate');
+        Route::post('/autodm/{uuid}/duplicate', [AutoDmController::class, 'duplicate'])->name('autodm.duplicate');
+        Route::get('/autodm/{uuid}/runs', [AutoDmController::class, 'runs'])->name('autodm.runs');
         Route::post('/instagram/connect', [InstagramController::class, 'connect'])->name('app.instagram.connect')->middleware('feature:instagram_sync');
         Route::post('/instagram/sync', [InstagramController::class, 'sync'])->name('app.instagram.sync');
         Route::get('/project-files/{file}', [ProjectFileController::class, 'download'])->name('app.project-files.download');
