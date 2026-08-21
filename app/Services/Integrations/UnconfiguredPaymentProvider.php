@@ -36,4 +36,14 @@ class UnconfiguredPaymentProvider implements PaymentProviderInterface
             'detail' => 'No payment provider is configured, so no authoritative status exists.',
         ];
     }
+
+    public function refundPayment(string $providerPaymentId, int $amountMinor, string $reason): array
+    {
+        return [
+            'status' => 'provider_not_configured',
+            'refunded_minor' => null,
+            'provider_refund_id' => null,
+            'detail' => 'No payment provider is configured, so nothing was refunded.',
+        ];
+    }
 }

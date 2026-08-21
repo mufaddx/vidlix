@@ -23,4 +23,16 @@ interface PaymentProviderInterface
      * @return array{status: string, amount_minor: ?int, currency: ?string, provider_payment_id: ?string, detail: string}
      */
     public function fetchPayment(string $providerPaymentId): array;
+
+    /**
+     * Refund a captured payment, in full or in part.
+     *
+     * Returning a result is not a refund. As with a capture, the provider's own
+     * record is authoritative and the ledger is only written once the provider
+     * confirms — a refund that exists locally and not at the bank is worse than
+     * one that has not happened.
+     *
+     * @return array{status: string, refunded_minor: ?int, provider_refund_id: ?string, detail: string}
+     */
+    public function refundPayment(string $providerPaymentId, int $amountMinor, string $reason): array;
 }

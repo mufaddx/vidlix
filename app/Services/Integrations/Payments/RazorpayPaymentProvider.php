@@ -152,6 +152,57 @@ class RazorpayPaymentProvider implements PaymentProviderInterface
         ];
     }
 
+    public function refundPayment(string $providerPaymentId, int $amountMinor, string $reason): array
+    {
+        if (! $this->isConfigured()) {
+            return [
+                'status' => 'provider_not_configured',
+                'refunded_minor' => null,
+                'provider_refund_id' => null,
+                'detail' => 'PAYMENT_KEY_ID / PAYMENT_KEY_SECRET are missing.',
+            ];
+        }
+
+        try {
+            $response = $this->client()->post('/payments/'.$providerPaymentId.'/refund', [
+                'amount' => $amountMinor,
+                // Razorpay deduplicates on this, so a retried refund cannot pay
+                // somebody twice even if our own guard were bypassed.
+                'receipt' => 'vidlix-refund-'.$providerPaymentId.'-'.$amountMinor,
+                'notes' => ['reason' => mb_substr($reason, 0, 255)],
+            ]);
+        } catch (Throwable $e) {
+            Log::warning('razorpay.refund.failure', ['message' => $e->getMessage()]);
+
+            return [
+                'status' => 'provider_unavailable',
+                'refunded_minor' => null,
+                'provider_refund_id' => null,
+                // Unknown, not failed. A refund that may have gone through must
+                // not be retried blindly.
+                'detail' => 'Razorpay could not be reached. The refund status is unknown and must be checked before retrying.',
+            ];
+        }
+
+        if (! $response->successful()) {
+            return [
+                'status' => 'provider_error',
+                'refunded_minor' => null,
+                'provider_refund_id' => null,
+                'detail' => 'Razorpay returned '.$response->status().': '.$this->errorText($response->json()),
+            ];
+        }
+
+        $body = (array) $response->json();
+
+        return [
+            'status' => 'refunded',
+            'refunded_minor' => isset($body['amount']) ? (int) $body['amount'] : null,
+            'provider_refund_id' => $body['id'] ?? null,
+            'detail' => 'Razorpay confirmed the refund.',
+        ];
+    }
+
     /** Map both payment-link and payment entity states onto our own vocabulary. */
     private function normalizeStatus(string $raw): string
     {

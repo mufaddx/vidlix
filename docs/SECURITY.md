@@ -136,8 +136,21 @@ OAuth tokens encrypted at rest; `token_encrypted` is in `$hidden`.
 ## Payments
 
 Amounts computed server-side. Provider signature verified. A browser redirect is
-never treated as settlement — only a signed webhook is. The ledger is
-append-only and every balance is summed from it, never stored, so it cannot
+never treated as settlement — and neither is a webhook body: a verified webhook
+only prompts an authoritative fetch from the provider API, and settlement is
+refused if the amount comes back smaller than the invoice.
+
+Refunds follow the same rule. The ledger is written only once the provider
+confirms, and reversals are **appended** rather than subtracted, so "we took
+5,000 and gave 2,000 back" stays legible as two facts. An inconclusive refund
+writes nothing and is never retried blindly — the money may already have moved.
+
+An hourly reconciliation sweep asks the provider about anything pending too
+long. Webhooks get lost, and waiting for a customer to complain is not a
+strategy. A payment the provider will not describe is left alone rather than
+guessed at in either direction.
+
+Every balance is summed from an append-only ledger, never stored, so it cannot
 drift from the rows it describes.
 
 ## Outstanding
@@ -145,10 +158,9 @@ drift from the rows it describes.
 | # | Item | Priority |
 |---|---|---|
 | 1 | `FILESYSTEM_DISK=s3` in production — the code is verified, the setting is a deploy step | High |
-| 2 | Payments reconciliation and refund paths untested | High |
-| 3 | Staging DAST not yet run | Medium |
-| 4 | Backup and restore not yet rehearsed | Medium |
-| 5 | `SESSION_SECURE_COOKIE` and SameSite unverified in production config | Medium |
+| 2 | Staging DAST not yet run | Medium |
+| 3 | Backup and restore not yet rehearsed | Medium |
+| 4 | `SESSION_SECURE_COOKIE` and SameSite unverified in production config | Medium |
 
 ## Reporting
 

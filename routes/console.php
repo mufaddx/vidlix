@@ -2,6 +2,8 @@
 
 use App\Jobs\SyncInstagramProfile;
 use App\Models\CreatorProfile;
+use App\Services\Deals\NegotiationService;
+use App\Services\Payments\Reconciliation;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -36,3 +38,28 @@ Schedule::command('queue:work --stop-when-empty --max-time=55 --tries=3')
  | HTTP-triggered one can - does not turn one nudge into several.
  */
 Schedule::command('vidlix:reminders')->dailyAt('09:00');
+
+/*
+ | Payments nobody heard back about.
+ |
+ | Webhooks get lost — provider outages, our own queue down, a delivery that
+ | simply never arrives — and a lost one leaves a payment in limbo while the
+ | money has already moved. Waiting for a customer to complain is not a
+ | reconciliation strategy.
+ |
+ | withoutOverlapping because a slow provider must not let two sweeps ask about
+ | the same payments at once.
+ */
+Schedule::call(function () {
+    app(Reconciliation::class)->run();
+    // A closure needs a name before it can be locked against overlap; without
+    // one there is nothing for the mutex to key on.
+})->name('payments-reconciliation')->hourly()->withoutOverlapping();
+
+/*
+ | Offers nobody answered. Expiry is a status change rather than a deletion,
+ | because "they never replied" is itself worth being able to see.
+ */
+Schedule::call(function () {
+    app(NegotiationService::class)->expireOverdue();
+})->dailyAt('02:00');
