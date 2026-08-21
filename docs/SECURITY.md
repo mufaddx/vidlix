@@ -105,6 +105,15 @@ Large media never touches MySQL. `MEDIA_DISK` / `FILESYSTEM_DISK` should be `s3`
 in production — the S3/R2 disk is configured correctly, but the **default is
 `local`** and must be changed.
 
+Uploads are validated against a whitelist of real MIME types, read from the
+file's own contents and never from the Content-Type header the browser sent —
+that header is supplied by whoever is uploading. The extension is checked
+separately, because a file can carry a harmless MIME and a dangerous name, and
+whichever a downstream consumer trusts is the one that matters.
+
+Object keys are opaque and never built from the original filename. A key built
+from user input is a traversal waiting to happen.
+
 ## Public forms
 
 Honeypot, Turnstile, `throttle:public-form`. A honeypot trip fails with the same
@@ -135,7 +144,7 @@ drift from the rows it describes.
 
 | # | Item | Priority |
 |---|---|---|
-| 1 | `FILESYSTEM_DISK=s3` in production; verify signed URLs and MIME enforcement | High |
+| 1 | `FILESYSTEM_DISK=s3` in production — the code is verified, the setting is a deploy step | High |
 | 2 | Payments reconciliation and refund paths untested | High |
 | 3 | Staging DAST not yet run | Medium |
 | 4 | Backup and restore not yet rehearsed | Medium |

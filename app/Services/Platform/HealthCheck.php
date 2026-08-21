@@ -7,6 +7,9 @@ use App\Contracts\InstagramProviderInterface;
 use App\Contracts\PaymentProviderInterface;
 use App\Contracts\PayoutProviderInterface;
 use App\Contracts\PushProviderInterface;
+use App\Models\AutodmAutomation;
+use App\Models\AutodmRun;
+use App\Models\CustomDomain;
 use App\Models\InboundEmailEvent;
 use App\Models\WebhookLog;
 use Illuminate\Support\Facades\Cache;
@@ -35,6 +38,8 @@ class HealthCheck
             ...$this->providers(),
             $this->webhooks(),
             $this->inboundMail(),
+            $this->autodm(),
+            $this->customDomains(),
         ];
     }
 
@@ -126,6 +131,67 @@ class HealthCheck
         }
 
         return $rows;
+    }
+
+    /**
+     * AutoDM, reported as three separate numbers.
+     *
+     * Skipped is not lumped in with failed. A skip is an action the platform
+     * would not permit — there is nothing to chase — while a failure is
+     * something that went wrong and might be worth fixing. Showing one total
+     * would hide whichever of the two actually needs attention.
+     */
+    private function autodm(): array
+    {
+        $active = AutodmAutomation::query()->where('status', AutodmAutomation::ACTIVE)->count();
+
+        if ($active === 0) {
+            return $this->row('AutoDM', 'ok', 'No active automations.');
+        }
+
+        $since = now()->subDay();
+
+        $failed = AutodmRun::query()
+            ->whereIn('status', [AutodmRun::FAILED, AutodmRun::PERMANENTLY_FAILED])
+            ->where('created_at', '>=', $since)
+            ->count();
+
+        $skipped = AutodmRun::query()
+            ->where('status', AutodmRun::SKIPPED)
+            ->where('created_at', '>=', $since)
+            ->count();
+
+        $sent = AutodmRun::query()
+            ->where('status', AutodmRun::SENT)
+            ->where('created_at', '>=', $since)
+            ->count();
+
+        $detail = $active.' active. Last 24h: '.$sent.' sent, '.$skipped.' skipped, '.$failed.' failed.';
+
+        return $this->row('AutoDM', $failed > 0 ? 'warn' : 'ok', $detail);
+    }
+
+    /**
+     * Custom domains, counted by how far along they are.
+     *
+     * A domain stuck short of active is somebody waiting on us or on their own
+     * DNS, and neither shows up anywhere else.
+     */
+    private function customDomains(): array
+    {
+        $total = CustomDomain::query()->whereNot('status', CustomDomain::DISCONNECTED)->count();
+
+        if ($total === 0) {
+            return $this->row('Custom domains', 'ok', 'None connected.');
+        }
+
+        $active = CustomDomain::query()->where('status', CustomDomain::ACTIVE)->count();
+        $failed = CustomDomain::query()->where('status', CustomDomain::FAILED)->count();
+        $pending = $total - $active - $failed;
+
+        $detail = $active.' active, '.$pending.' still setting up, '.$failed.' failed.';
+
+        return $this->row('Custom domains', $failed > 0 ? 'warn' : 'ok', $detail);
     }
 
     private function webhooks(): array
