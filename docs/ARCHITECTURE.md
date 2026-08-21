@@ -1,6 +1,6 @@
-# Vidlix architecture freeze (Phase 0)
+# Vidlix architecture
 
-Product: Creator × Brand × Editor × Manager collaboration marketplace.  
+Product: Creator × Editor × Brand collaboration marketplace, plus Instagram AutoDM.  
 Stack: Laravel 13 + MySQL (local SQLite allowed) + Hostinger. Clients talk only to HTTPS `/api/v1` or Blade web — never to MySQL.
 
 ## Non-negotiables
@@ -8,7 +8,7 @@ Stack: Laravel 13 + MySQL (local SQLite allowed) + Hostinger. Clients talk only 
 - No fake payment success, wallet balances, Instagram analytics, or outbound email “sent” state.
 - External systems sit behind replaceable interfaces. Missing credentials = explicit `PROVIDER_NOT_CONFIGURED`.
 - Money source of truth is an immutable ledger. UI balances are derived, never invented.
-- Manager actions store `actor_user_id` + `acting_for_creator_id`. Client-supplied `creator_id` is never trusted.
+- Ownership is never taken from client input. The owner of a public form comes from the URL, a sender identity from the conversation's own scope, a permission from what the provider returned.
 - Large media lives in object storage; MySQL stores metadata and storage keys only.
 - Instagram uses official Meta APIs only. Scraping is forbidden.
 - Public form builder cannot inject HTML/JS/CSS. Themes are token presets.
@@ -17,7 +17,8 @@ Stack: Laravel 13 + MySQL (local SQLite allowed) + Hostinger. Clients talk only 
 
 - `users` is the permanent identity.
 - Roles are many-to-many. One person may be creator + editor.
-- Active workspace is a **server session context** (`active_role`, optional `acting_for_creator_id`), re-authorized on every request.
+- Active profile is a **server session context** (`active_role`), re-authorized on every request. The session holds a profile name, never a permission.
+- Nobody acts on somebody else's behalf. The manager system was removed — see `MANAGER-REMOVAL.md`.
 - Switching workspace does not change login identity.
 
 ## Conversation model
