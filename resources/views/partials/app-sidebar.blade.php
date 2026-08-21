@@ -24,7 +24,7 @@
         <a href="{{ route('app.campaigns') }}">{{ __('Campaigns') }}</a>
         <a href="{{ route('app.applications') }}">{{ __('Applications') }}</a>
         <a href="{{ route('app.projects') }}">{{ __('Projects') }}</a>
-        <a href="{{ route('app.proposals') }}">{{ __('Proposals') }}</a>
+        <a class="{{ request()->routeIs('app.negotiations*') ? 'active' : '' }}" href="{{ route('app.negotiations') }}">{{ __('Negotiations') }}</a>
         <a href="{{ route('app.chat') }}">{{ __('Chat') }}</a>
         <a href="{{ route('app.portfolio') }}">{{ __('Portfolio') }}</a>
         <a href="{{ route('app.invoices') }}">{{ __('Invoices') }}</a>

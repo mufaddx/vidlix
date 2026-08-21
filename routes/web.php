@@ -14,6 +14,7 @@ use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DiscoveryController;
 use App\Http\Controllers\App\InboxController;
 use App\Http\Controllers\App\InstagramController;
+use App\Http\Controllers\App\NegotiationController;
 use App\Http\Controllers\App\PrivacyController;
 use App\Http\Controllers\App\ProjectFileController;
 use App\Http\Controllers\App\PublicPageStudioController;
@@ -201,6 +202,19 @@ Route::middleware('auth')->group(function () {
         Route::delete('/settings/privacy', [PrivacyController::class, 'destroy'])->middleware('throttle:3,60')->name('app.privacy.destroy');
         Route::get('/portfolio', [WorkspaceController::class, 'portfolio'])->name('app.portfolio');
         Route::post('/portfolio', [WorkspaceController::class, 'storePortfolio'])->name('app.portfolio.store');
+        /*
+         | Negotiations. No route carries an offer id: accepting always means
+         | accepting whatever is currently on the table, so a stale offer
+         | cannot be accepted after it has been countered.
+         */
+        Route::get('/negotiations', [NegotiationController::class, 'index'])->name('app.negotiations');
+        Route::post('/negotiations', [NegotiationController::class, 'store'])->name('app.negotiations.store');
+        Route::get('/negotiations/{uuid}', [NegotiationController::class, 'show'])->name('app.negotiations.show');
+        Route::post('/negotiations/{uuid}/counter', [NegotiationController::class, 'counter'])->name('app.negotiations.counter');
+        Route::post('/negotiations/{uuid}/accept', [NegotiationController::class, 'accept'])->name('app.negotiations.accept');
+        Route::post('/negotiations/{uuid}/reject', [NegotiationController::class, 'reject'])->name('app.negotiations.reject');
+        Route::post('/negotiations/{uuid}/cancel', [NegotiationController::class, 'cancel'])->name('app.negotiations.cancel');
+
         Route::get('/proposals', [WorkspaceController::class, 'proposals'])->name('app.proposals');
         Route::post('/proposals', [WorkspaceController::class, 'storeProposal'])->name('app.proposals.store');
         Route::get('/invoices', [WorkspaceController::class, 'invoices'])->name('app.invoices');
