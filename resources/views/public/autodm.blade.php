@@ -10,8 +10,50 @@
         {{ __('Pick a post, choose the words to watch for, write the reply once. Every matching comment gets an answer without you being at your phone.') }}
     </p>
     <p>
-        <a class="btn" href="{{ route('register') }}">{{ __('Get started') }}</a>
+        <a class="btn" href="{{ \App\Support\Host::urlFor('autodm', 'register') }}">{{ __('Get started') }}</a>
         <a class="btn secondary" href="#limits">{{ __('What Instagram allows') }}</a>
+    </p>
+</section>
+
+{{--
+    What actually happens, shown rather than described.
+
+    Three steps that play in a loop: a comment arrives, it matches, a reply goes
+    back. It is a diagram, not a demo — no invented handles, no fake screenshot
+    of Instagram — because a mock-up of somebody else's app implies a
+    relationship with them that does not exist.
+
+    The whole thing is CSS. It respects prefers-reduced-motion, so a person who
+    has asked for stillness gets the finished state instead of the loop.
+--}}
+<section class="wrap section">
+    <h2>{{ __('What happens') }}</h2>
+
+    <div class="autodm-flow" aria-hidden="true">
+        <div class="autodm-step" style="--delay:0s">
+            <p class="kicker">{{ __('Someone comments') }}</p>
+            <p class="autodm-bubble">{{ __('send me the link!') }}</p>
+        </div>
+
+        <div class="autodm-arrow" style="--delay:1.2s">→</div>
+
+        <div class="autodm-step" style="--delay:2.4s">
+            <p class="kicker">{{ __('It matches your word') }}</p>
+            <p class="autodm-bubble autodm-match">{{ __('“link”') }}</p>
+        </div>
+
+        <div class="autodm-arrow" style="--delay:3.6s">→</div>
+
+        <div class="autodm-step" style="--delay:4.8s">
+            <p class="kicker">{{ __('They hear back') }}</p>
+            <p class="autodm-bubble autodm-reply">{{ __('Here you go 👇') }}</p>
+        </div>
+    </div>
+
+    {{-- The animation is decoration; this sentence is the actual content, and
+         it is what a screen reader gets. --}}
+    <p class="muted">
+        {{ __('Somebody comments on your post. If it contains a word you chose, Vidlix answers them — publicly under the comment, or privately where Instagram permits it.') }}
     </p>
 </section>
 
@@ -120,6 +162,6 @@
 <section class="wrap section">
     <h2>{{ __('Start with your own account') }}</h2>
     <p class="lede">{{ __('Connect Instagram, build one automation, and watch what it does before you build a second.') }}</p>
-    <p><a class="btn" href="{{ route('register') }}">{{ __('Create an account') }}</a></p>
+    <p><a class="btn" href="{{ \App\Support\Host::urlFor('autodm', 'register') }}">{{ __('Create an account') }}</a></p>
 </section>
 @endsection

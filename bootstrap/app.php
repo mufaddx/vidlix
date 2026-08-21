@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureFeature;
 use App\Http\Middleware\EnsureWorkspace;
 use App\Http\Middleware\MaintenanceGate;
 use App\Http\Middleware\ResolveCustomDomain;
+use App\Http\Middleware\RouteByHost;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyTurnstile;
 use App\Support\RequestId;
@@ -33,6 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // else's hostname must be narrowed to their contact form, or refused,
         // before anything downstream gets a chance to serve it something wider.
         $middleware->append(ResolveCustomDomain::class);
+        // After the tenant check, before anything else: each of the four hosts
+        // serves only its own part of the product, or the four domains are just
+        // four names for one website.
+        $middleware->append(RouteByHost::class);
         // Runs after the security headers so a closed site still sends them.
         $middleware->append(MaintenanceGate::class);
         $middleware->alias([

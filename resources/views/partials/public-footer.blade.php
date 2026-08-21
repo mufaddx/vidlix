@@ -17,7 +17,7 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 9H4V20h2.5zM5.2 4A1.6 1.6 0 1 0 5.2 7.2 1.6 1.6 0 0 0 5.2 4zM20 20h-2.5v-5.4c0-1.5-.5-2.5-1.8-2.5a1.9 1.9 0 0 0-1.8 1.3 2.5 2.5 0 0 0-.1.9V20H11V9h2.4v1.5A3 3 0 0 1 16 9c2.3 0 4 1.5 4 4.7z"/></svg>
                 </a>
             </div>
-            <a class="footer-cta" href="{{ route('register') }}">{{ __('Join Vidlix') }}</a>
+            <a class="footer-cta" href="{{ \App\Support\Host::urlFor('app', 'register') }}">{{ __('Join Vidlix') }}</a>
         </div>
         <div>
             <h3>{{ __('Marketplace') }}</h3>
@@ -27,7 +27,7 @@
                 <li><a href="{{ route('brands.index') }}">{{ __('Brands') }}</a></li>
                 <li><a href="{{ route('campaigns.index') }}">{{ __('Campaigns') }}</a></li>
                 <li><a href="{{ route('pricing') }}">{{ __('Pricing') }}</a></li>
-                <li><a href="{{ route('autodm.landing') }}">{{ __('Instagram AutoDM') }}</a></li>
+                <li><a href="{{ \App\Support\Host::urlFor('autodm') }}">{{ __('Instagram AutoDM') }}</a></li>
                 <li><a href="{{ route('pages.show', 'how-it-works') }}">{{ __('How it works') }}</a></li>
                 <li><a href="{{ route('pages.show', 'for-creators') }}">{{ __('For creators') }}</a></li>
                 <li><a href="{{ route('pages.show', 'for-editors') }}">{{ __('For editors') }}</a></li>
@@ -45,8 +45,8 @@
                 <li><a href="{{ route('pages.show', 'contact') }}">{{ __('Contact') }}</a></li>
                 <li><a href="{{ route('pages.show', 'faq') }}">{{ __('FAQ') }}</a></li>
                 <li><a href="{{ route('home') }}">{{ __('Home') }}</a></li>
-                <li><a href="{{ route('register') }}">{{ __('Join') }}</a></li>
-                <li><a href="{{ route('login') }}">{{ __('Login') }}</a></li>
+                <li><a href="{{ \App\Support\Host::urlFor('app', 'register') }}">{{ __('Join') }}</a></li>
+                <li><a href="{{ \App\Support\Host::urlFor('app', 'login') }}">{{ __('Login') }}</a></li>
             </ul>
         </div>
         <div>

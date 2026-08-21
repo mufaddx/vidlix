@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.autodm')
 @section('title', __('Review automation'))
 @section('content')
 

@@ -19,6 +19,20 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+
+        <!--
+            All four faces on one host.
+
+            Tests reach the whole application through a single hostname, so the
+            host router has to see one host and stand aside. Leaving the other
+            three at their production defaults would make it think it was in a
+            four-domain deployment and take the admin panel away from every
+            test that opens it.
+        -->
+        <env name="APP_URL" value="http://localhost"/>
+        <env name="APP_APP_URL" value="http://localhost"/>
+        <env name="AUTODM_APP_URL" value="http://localhost"/>
+        <env name="ADMIN_APP_URL" value="http://localhost"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

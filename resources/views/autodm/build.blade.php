@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.autodm')
 @section('title', $automation ? __('Edit automation') : __('New automation'))
 @section('content')
 

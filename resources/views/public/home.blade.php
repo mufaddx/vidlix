@@ -16,7 +16,7 @@
                 <button class="btn" type="submit">{{ __('Search') }}</button>
             </form>
             <p class="hero-actions">
-                <a class="btn" href="{{ route('register') }}">{{ __('List your profile') }}</a>
+                <a class="btn" href="{{ \App\Support\Host::urlFor('app', 'register') }}">{{ __('List your profile') }}</a>
                 <a class="btn secondary" href="{{ route('campaigns.index') }}">{{ __('Browse campaigns') }}</a>
             </p>
             <div class="role-strip">
@@ -211,7 +211,7 @@
             <h2>{{ __('Instagram AutoDM') }}</h2>
             <p class="muted">{{ __('Turn comments on your posts and reels into conversations, automatically.') }}</p>
         </div>
-        <a href="{{ config('vidlix.domains.autodm') }}">{{ __('See AutoDM') }}</a>
+        <a href="{{ \App\Support\Host::urlFor('autodm') }}">{{ __('See AutoDM') }}</a>
     </div>
     <div class="grid">
         <article class="card">
@@ -267,7 +267,7 @@
         <h2>{{ __('Publish a desk the industry can actually work with.') }}</h2>
         <p class="lede" style="margin-inline:auto;">{{ __('Join as a creator, an editor, or a brand — on one account.') }}</p>
         <p style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
-            <a class="btn" href="{{ route('register') }}">{{ __('Create account') }}</a>
+            <a class="btn" href="{{ \App\Support\Host::urlFor('app', 'register') }}">{{ __('Create account') }}</a>
             <a class="btn secondary" href="{{ route('pages.show', 'contact') }}">{{ __('Talk to us') }}</a>
         </p>
     </div>

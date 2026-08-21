@@ -566,3 +566,70 @@ body.nav-locked { overflow: hidden; }
 .state-empty { border-left-color: var(--line); }
 
 .state-error { border-left-color: var(--danger); }
+
+/* ------------------------------------------------------------------------
+   AutoDM flow diagram (public/autodm).
+
+   Three steps that fade in one after another and loop. A diagram rather than
+   a mock-up: no Instagram chrome, no invented handles — imitating somebody
+   else's interface implies a relationship with them that does not exist.
+   ------------------------------------------------------------------------ */
+.autodm-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 28px 0;
+}
+
+.autodm-step {
+    flex: 1 1 200px;
+    min-width: 180px;
+    max-width: 260px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    opacity: 0;
+    animation: autodm-in 7.2s var(--delay, 0s) infinite;
+}
+
+.autodm-arrow {
+    color: var(--muted);
+    font-size: 22px;
+    opacity: 0;
+    animation: autodm-in 7.2s var(--delay, 0s) infinite;
+}
+
+.autodm-bubble {
+    margin: 8px 0 0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: var(--bg-sunken);
+    font-size: 15px;
+}
+
+.autodm-match {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-weight: 600;
+}
+
+.autodm-reply {
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
+@keyframes autodm-in {
+    0%   { opacity: 0; transform: translateY(6px); }
+    8%   { opacity: 1; transform: none; }
+    88%  { opacity: 1; transform: none; }
+    100% { opacity: 0; transform: translateY(-4px); }
+}
+
+/* Somebody who asked for stillness gets the finished state, not the loop. */
+@media (prefers-reduced-motion: reduce) {
+    .autodm-step,
+    .autodm-arrow { animation: none; opacity: 1; }
+}

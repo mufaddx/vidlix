@@ -30,7 +30,11 @@
                 @endif
                 @yield('content')
             </main>
-            @include('partials.public-footer')
+            {{-- The marketing footer belongs to the public site. Somebody
+                 signed in is working, not being sold to. --}}
+            @guest
+                @include('partials.public-footer')
+            @endguest
         </div>
     </div>
     <script src="{{ \App\Support\Asset::url('js/site.js') }}" defer></script>

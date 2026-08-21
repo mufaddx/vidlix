@@ -42,7 +42,7 @@
             <h2>{{ __('Instagram AutoDM') }}</h2>
             <p class="muted">{{ __('Turn comments on your posts into conversations, using official Instagram APIs only.') }}</p>
         </div>
-        <a href="{{ config('vidlix.domains.autodm') }}">{{ __('See AutoDM') }}</a>
+        <a href="{{ \App\Support\Host::urlFor('autodm') }}">{{ __('See AutoDM') }}</a>
     </div>
     <p class="muted">{{ __('AutoDM is billed separately from the marketplace. Plans are not published yet — what it can do depends on the permissions Instagram grants an account, and we would rather price it once that is settled than quote a number we might have to withdraw.') }}</p>
 </div>

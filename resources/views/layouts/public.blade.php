@@ -48,8 +48,8 @@
                 @auth
                     <a href="{{ route('dashboard') }}">{{ __('Dashboard') }}</a>
                 @else
-                    <a href="{{ route('login') }}">{{ __('Login') }}</a>
-                    <a class="btn" href="{{ route('register') }}">{{ __('Join') }}</a>
+                    <a href="{{ \App\Support\Host::urlFor('app', 'login') }}">{{ __('Login') }}</a>
+                    <a class="btn" href="{{ \App\Support\Host::urlFor('app', 'register') }}">{{ __('Join') }}</a>
                 @endauth
             </nav>
         </div>
