@@ -99,7 +99,10 @@ return new class extends Migration
             $table->timestamp('activated_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['autodm_automation_id', 'version_number']);
+            // Named explicitly. The name Laravel would generate is 69
+            // characters and MySQL refuses anything over 64 — a limit SQLite
+            // does not have, so the test suite would never have caught it.
+            $table->unique(['autodm_automation_id', 'version_number'], 'autodm_versions_unique');
         });
 
         /*
