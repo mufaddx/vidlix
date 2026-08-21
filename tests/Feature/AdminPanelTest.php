@@ -89,7 +89,7 @@ class AdminPanelTest extends TestCase
     {
         $admin = $this->superAdmin();
 
-        foreach (['/admin/help-desk', '/admin/verification', '/admin/finance', '/admin/employees'] as $path) {
+        foreach (['/admin/help-desk', '/admin/verification', '/admin/finance', '/admin/employees', '/admin/autodm', '/admin/webhooks'] as $path) {
             $this->actingAs($admin)->get($path)->assertOk();
         }
     }

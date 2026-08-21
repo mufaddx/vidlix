@@ -297,6 +297,8 @@ Route::middleware('auth')->group(function () {
 
         // Staff accounts. Granting abilities is itself gated.
         Route::get('/health', [AdminPlatformController::class, 'health'])->name('health')->middleware('can:platform.manage');
+        Route::get('/autodm', [AdminPlatformController::class, 'autodm'])->name('autodm')->middleware('can:platform.manage');
+        Route::get('/webhooks', [AdminPlatformController::class, 'webhooks'])->name('webhooks')->middleware('can:platform.manage');
         Route::get('/platform', [AdminPlatformController::class, 'index'])->name('platform')->middleware('can:platform.manage');
         Route::post('/platform/flag', [AdminPlatformController::class, 'saveFlag'])->name('platform.flag')->middleware('can:platform.manage');
         Route::post('/platform/maintenance', [AdminPlatformController::class, 'saveMaintenance'])->name('platform.maintenance')->middleware('can:platform.manage');

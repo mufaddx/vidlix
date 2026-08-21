@@ -61,6 +61,8 @@ final class AdminNavigation
                     ['route' => 'admin.cms', 'label' => 'Website copy', 'ability' => Ability::CMS_MANAGE],
                     ['route' => 'admin.employees', 'label' => 'Employees', 'ability' => Ability::EMPLOYEES_MANAGE],
                     ['route' => 'admin.health', 'label' => 'System health', 'ability' => Ability::PLATFORM_MANAGE],
+                    ['route' => 'admin.autodm', 'label' => 'AutoDM accounts', 'ability' => Ability::PLATFORM_MANAGE],
+                    ['route' => 'admin.webhooks', 'label' => 'Webhook deliveries', 'ability' => Ability::PLATFORM_MANAGE],
                     ['route' => 'admin.platform', 'label' => 'Feature switches', 'ability' => Ability::PLATFORM_MANAGE],
                 ],
             ],
