@@ -65,8 +65,14 @@ class AppSignupContractTest extends TestCase
         $this->withToken($token)
             ->postJson('/api/v1/roles/apply', ['role' => 'editor'])
             ->assertCreated()
-            // Applying is not becoming: an editor profile waits for review.
-            ->assertJsonPath('data.status', 'pending');
+            /*
+             | Applying is not becoming, and it is not submitting either. Saying
+             | "I edit" opens a draft; the application is sent only when the
+             | person has filled it in and pressed submit, and it is approved
+             | only when a reviewer says so. Marking it pending here would put
+             | an empty profile in a reviewer's queue.
+             */
+            ->assertJsonPath('data.status', 'draft');
 
         $this->assertContains('editor', $user->fresh()->roleSlugs());
     }
@@ -82,7 +88,9 @@ class AppSignupContractTest extends TestCase
         $this->withToken($token)
             ->postJson('/api/v1/roles/apply', ['role' => 'editor'])
             ->assertCreated()
-            ->assertJsonPath('data.status', 'pending');
+            // Idempotent: asking again finds the same draft rather than
+            // resetting it or creating a second one.
+            ->assertJsonPath('data.status', 'draft');
     }
 
     public function test_nobody_can_make_themselves_a_manager(): void

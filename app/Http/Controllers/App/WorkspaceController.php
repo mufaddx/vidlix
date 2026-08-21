@@ -34,6 +34,7 @@ use App\Services\Marketplace\CampaignLifecycle;
 use App\Services\Marketplace\MarketplaceEngine;
 use App\Services\Media\MediaStorage;
 use App\Services\Notifications\Notifier;
+use App\Services\Profiles\EditorApplication;
 use App\Services\Support\HelpDesk;
 use App\Services\Workspace\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -99,26 +100,56 @@ class WorkspaceController extends Controller
         $user->roles()->syncWithoutDetaching(Role::query()->where('slug', $role)->pluck('id'));
     }
 
-    public function applyEditor(Request $request): RedirectResponse
+    /**
+     * Save the editor application.
+     *
+     * Saving is not submitting and submitting is not approval. Each is its own
+     * step, because collapsing them is how somebody ends up listed in the
+     * marketplace merely by filling in a form.
+     */
+    public function applyEditor(Request $request, EditorApplication $applications): RedirectResponse
     {
-        $this->ensureRole($request->user(), 'editor');
-        $profile = $request->user()->fresh()->editorProfile;
-        abort_unless($profile !== null, 403);
+        $profile = $this->editorProfileFor($request);
+
         $data = $request->validate([
-            'bio' => ['required', 'string', 'max:3000'],
-            'software' => ['nullable', 'string'],
-            'specializations' => ['nullable', 'string'],
+            'display_name' => ['nullable', 'string', 'max:120'],
+            'bio' => ['nullable', 'string', 'max:3000'],
+            'years_experience' => ['nullable', 'integer', 'min:0', 'max:70'],
+            'specializations' => ['nullable', 'string', 'max:2000'],
+            'software' => ['nullable', 'string', 'max:2000'],
+            'services' => ['nullable', 'string', 'max:2000'],
+            'languages' => ['nullable', 'string', 'max:2000'],
             'starting_price_minor' => ['nullable', 'integer', 'min:0'],
-        ]);
-        $profile->update([
-            'bio' => $data['bio'],
-            'software' => array_filter(array_map('trim', explode(',', $data['software'] ?? ''))),
-            'specializations' => array_filter(array_map('trim', explode(',', $data['specializations'] ?? ''))),
-            'starting_price_minor' => $data['starting_price_minor'] ?? null,
-            'application_status' => 'pending_review',
+            'availability' => ['nullable', 'string', 'max:120'],
+            'location' => ['nullable', 'string', 'max:160'],
+            'portfolio_url' => ['nullable', 'url', 'max:2000'],
         ]);
 
-        return back()->with('status', __('Editor application submitted for admin review.'));
+        $applications->saveDraft($profile, $data);
+
+        if ($request->boolean('accept_terms')) {
+            $applications->acceptTerms($profile->fresh());
+        }
+
+        return back()->with('status', __('Saved. Nothing is sent until you submit it.'));
+    }
+
+    public function submitEditor(Request $request, EditorApplication $applications): RedirectResponse
+    {
+        $applications->submit($this->editorProfileFor($request));
+
+        return back()->with('status', __('Sent. A person reads every application, so this is not instant.'));
+    }
+
+    private function editorProfileFor(Request $request): EditorProfile
+    {
+        $this->ensureRole($request->user(), 'editor');
+
+        $profile = $request->user()->fresh()->editorProfile;
+
+        abort_unless($profile !== null, 403);
+
+        return $profile;
     }
 
     public function saveBrand(Request $request): RedirectResponse

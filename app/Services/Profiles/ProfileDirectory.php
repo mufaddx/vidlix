@@ -20,7 +20,17 @@ class ProfileDirectory
 {
     public const ACTIVE = 'active';
 
+    /** Sent, and waiting on somebody here. */
     public const PENDING = 'pending';
+
+    /**
+     * Started but not sent.
+     *
+     * Distinct from both: nobody is reviewing it, so it is not pending, and the
+     * person has clearly opted in, so it is not not-applied. Collapsing it into
+     * either one tells them the wrong thing about whether to wait or to act.
+     */
+    public const DRAFT = 'draft';
 
     public const REJECTED = 'rejected';
 
@@ -96,7 +106,12 @@ class ProfileDirectory
 
         return match ($profile->application_status) {
             'approved' => self::ACTIVE,
-            'pending_review' => self::PENDING,
+            // 'submitted' and 'under_review' are separate answers to the
+            // applicant but the same answer to the rest of the system: not yet.
+            // 'more_info' sits here too — it is still an open application, and
+            // treating it as not-applied would lose the reviewer's note.
+            'pending_review', 'submitted', 'under_review', 'more_info' => self::PENDING,
+            'draft' => self::DRAFT,
             'rejected' => self::REJECTED,
             'suspended' => self::SUSPENDED,
             default => self::NOT_APPLIED,
@@ -127,6 +142,8 @@ class ProfileDirectory
             'type' => $type,
             'label' => self::LABELS[$type],
             'status' => $status,
+            // A draft exists — somebody started it — even though nothing has
+            // been sent.
             'exists' => $status !== self::NOT_APPLIED,
             'needs_review' => $needsReview,
         ];

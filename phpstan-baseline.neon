@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/MailPreviewCommand.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>display_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -163,24 +157,6 @@ parameters:
 			path: app/Services/Forms/ContactFormBuilder.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Forms/PublicInquiries.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Forms/PublicInquiries.php
-
-		-
-			message: '#^Parameter \#1 \$user of method App\\Services\\Forms\\ContactFormBuilder\:\:formFor\(\) expects App\\Models\\User, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Forms/PublicInquiries.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$subject\.$#'
 			identifier: property.notFound
 			count: 1
@@ -313,12 +289,6 @@ parameters:
 			path: tests/Feature/ContactFormBuilderTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/ContactFormBuilderTest.php
-
-		-
 			message: '#^Offset ''budget_range'' does not exist on string\.$#'
 			identifier: offsetAccess.notFound
 			count: 1
@@ -327,12 +297,6 @@ parameters:
 		-
 			message: '#^Offset ''what_are_you_contacting_me_about'' does not exist on string\.$#'
 			identifier: offsetAccess.notFound
-			count: 1
-			path: tests/Feature/ContactFormBuilderTest.php
-
-		-
-			message: '#^Parameter \#1 \$user of method Illuminate\\Foundation\\Testing\\TestCase\:\:actingAs\(\) expects Illuminate\\Contracts\\Auth\\Authenticatable, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
 			count: 1
 			path: tests/Feature/ContactFormBuilderTest.php
 

@@ -165,6 +165,25 @@ class PublicProfileUrlTest extends TestCase
         $this->get('/Mira')->assertRedirect('/mira');
     }
 
+    /**
+     * The legacy /editor/{username} redirect once swallowed /editor/apply and
+     * /editor/submit, because a wildcard registered before a real path wins.
+     * It lives below the application's own routes now, and this is what keeps
+     * it there.
+     */
+    public function test_the_legacy_editor_redirect_does_not_swallow_app_paths(): void
+    {
+        foreach (['app.editors.apply', 'app.editors.submit'] as $name) {
+            $url = route($name, [], false);
+
+            // Signed out, so a redirect to sign-in is the right answer. What
+            // must never happen is a 301 to /apply or /submit.
+            $response = $this->post($url);
+
+            $this->assertNotSame(301, $response->status(), $url.' is being swallowed by a wildcard');
+        }
+    }
+
     public function test_an_unknown_username_is_a_plain_404(): void
     {
         $this->get('/nobody-here')->assertNotFound();

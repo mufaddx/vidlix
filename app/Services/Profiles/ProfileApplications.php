@@ -149,7 +149,10 @@ class ProfileApplications
         match ($type) {
             // An influencer profile needs no review.
             'creator' => $user->creatorProfile()->update(['visibility' => 'public']),
-            'editor' => $user->editorProfile()->update(['application_status' => 'pending_review']),
+            // A draft, not a submission. Choosing "I edit" says what you do;
+            // it does not say your application is finished, and marking it sent
+            // would put an empty profile in front of a reviewer.
+            'editor' => $user->editorProfile()->update(['application_status' => 'draft']),
             'brand' => $user->brandProfile()->update(['verification_status' => 'pending_review']),
             default => null,
         };

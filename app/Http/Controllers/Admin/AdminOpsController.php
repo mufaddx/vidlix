@@ -14,6 +14,7 @@ use App\Models\Withdrawal;
 use App\Services\Audit\AuditLogger;
 use App\Services\Marketplace\CampaignLifecycle;
 use App\Services\Marketplace\MarketplaceEngine;
+use App\Services\Profiles\EditorApplication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -34,17 +35,33 @@ class AdminOpsController extends Controller
     public function verification(): View
     {
         return view('admin.verification', [
-            'editors' => EditorProfile::query()->where('application_status', 'pending_review')->get(),
+            // Everything genuinely waiting on somebody here, including the
+            // ones a reviewer has already opened.
+            'editors' => EditorProfile::query()
+                ->whereIn('application_status', ['pending_review', 'submitted', 'under_review'])
+                ->get(),
             'brands' => BrandProfile::query()->where('verification_status', 'pending_review')->get(),
             'campaigns' => Campaign::query()->where('status', 'pending_review')->get(),
         ]);
     }
 
-    public function decideEditor(Request $request, EditorProfile $editor): RedirectResponse
+    /**
+     * Decide an editor application.
+     *
+     * Routed through the service, which is the only place `visibility` is ever
+     * turned on. Approving here is what puts somebody in front of brands, so it
+     * must not be reachable by writing a column.
+     */
+    public function decideEditor(Request $request, EditorProfile $editor, EditorApplication $applications): RedirectResponse
     {
-        $editor->update(['application_status' => $request->validate(['decision' => ['required', 'in:approved,rejected']])['decision']]);
+        $data = $request->validate([
+            'decision' => ['required', 'in:approved,rejected,more_info,suspended'],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
 
-        return back()->with('status', __('Editor updated.'));
+        $applications->decide($editor, $request->user(), $data['decision'], $data['note'] ?? null);
+
+        return back()->with('status', __('Decision recorded and the editor has been told.'));
     }
 
     public function decideBrand(Request $request, BrandProfile $brand): RedirectResponse

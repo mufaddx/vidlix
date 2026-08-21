@@ -35,15 +35,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/creators', [HomeController::class, 'creators'])->name('creators.index');
 Route::get('/editors', [HomeController::class, 'editors'])->name('editors.index');
-/*
- | The old role-prefixed profile addresses. A public profile now lives at
- | vidlix.in/{username} with no role in it, but these are printed in bios and
- | pasted into messages, so they redirect permanently rather than break.
- */
-Route::permanentRedirect('/editors/{username}', '/{username}')->name('editors.public');
-Route::permanentRedirect('/editor/{username}', '/{username}');
-Route::post('/editors/{username}/enquire', fn (string $username) => redirect()->route('profile.contact', $username))
-    ->name('editors.enquire');
 Route::get('/brands', [HomeController::class, 'brands'])->name('brands.index');
 Route::get('/download/android', [AppDownloadController::class, 'android'])->name('app.download.android');
 Route::get('/brands/{slug}', [HomeController::class, 'brandShow'])->name('brands.public');
@@ -53,9 +44,6 @@ Route::get('/blog/{slug}', [HomeController::class, 'post'])->name('blog.show');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/autodm', [HomeController::class, 'autodm'])->name('autodm.landing');
 Route::get('/p/{slug}', [HomeController::class, 'page'])->name('pages.show');
-Route::permanentRedirect('/u/{username}', '/{username}')->name('creators.public');
-Route::post('/u/{username}/inquire', fn (string $username) => redirect()->route('profile.contact', $username))
-    ->name('creators.inquire');
 
 Route::middleware('guest')->group(function () {
     /*
@@ -150,6 +138,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/editor', [WorkspaceController::class, 'editors'])->name('app.editors');
         Route::post('/editor/apply', [WorkspaceController::class, 'applyEditor'])->name('app.editors.apply');
+        Route::post('/editor/submit', [WorkspaceController::class, 'submitEditor'])->name('app.editors.submit');
         Route::get('/discover', [DiscoveryController::class, 'index'])->name('app.discover');
         Route::post('/discover/{creator}/connect', [DiscoveryController::class, 'connect'])->name('app.discover.connect');
 
@@ -308,6 +297,27 @@ Route::middleware('auth')->group(function () {
         Route::post('/employees/{employee}/status', [AdminEmployeeController::class, 'updateStatus'])->name('employees.status')->middleware('can:employees.manage');
     });
 });
+
+/*
+ | The old role-prefixed profile addresses.
+ |
+ | A public profile now lives at vidlix.in/{username} with no role in it, but
+ | these are printed in bios and pasted into messages, so they redirect rather
+ | than break.
+ |
+ | They sit down here with the catch-all, not up with the other public routes,
+ | because /editor/{username} would otherwise swallow the application's own
+ | /editor/apply and /editor/submit — a wildcard registered before a real path
+ | wins, and the redirect is exactly as greedy as the catch-all is.
+ */
+Route::permanentRedirect('/editors/{username}', '/{username}')->name('editors.public');
+Route::permanentRedirect('/editor/{username}', '/{username}');
+Route::post('/editors/{username}/enquire', fn (string $username) => redirect()->route('profile.contact', $username))
+    ->name('editors.enquire');
+
+Route::permanentRedirect('/u/{username}', '/{username}')->name('creators.public');
+Route::post('/u/{username}/inquire', fn (string $username) => redirect()->route('profile.contact', $username))
+    ->name('creators.inquire');
 
 /*
  | vidlix.in/{username} — the public profile, and the last route in the file.
